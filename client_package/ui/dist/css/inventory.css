@@ -1,0 +1,183 @@
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+@font-face {
+	font-family: 'Open Sans';
+	src: url("../fonts/OpenSans-Bold.ttf");
+}
+
+button {
+	pointer-events: auto;
+}
+
+html {
+	height: 100%;
+}
+
+body {
+	position: absolute;
+	width: 100%;
+	min-height: 100%;
+	
+	font-family: 'Open Sans';
+}
+
+.item-selection {
+	position: absolute;
+	
+	background-color: rgba(0, 91, 255, 0.3);
+	border: 1px solid rgba(0, 91, 255, 1);
+	
+	pointer-events: none;
+	z-index: 200;
+}
+
+.ui-tooltip {
+    background-color: rgba(10, 10, 10, 0.8);
+	color: white;
+	
+	border-radius: 4px;
+    border: none !important;
+    box-shadow: none;
+}
+
+
+.windows, body > .items {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	
+	width: 100%;
+	height: 100%;
+	
+	pointer-events: none;
+}
+
+.window {
+	position: absolute !important;
+	
+	border-radius: 4px;
+	overflow: hidden;
+	
+	pointer-events: auto;
+	
+	z-index: 0;
+}
+
+.window > .top-bar {
+	display: flex;
+	background-color: rgba(10, 10, 10, 0.8);
+	cursor: move;
+}
+
+.window > .top-bar > .title {
+	color: #FFFFFF;
+	
+	font-size: 1vw;
+	
+	padding: 4px 8px 4px 8px;
+}
+
+.window > .top-bar > .close {
+	color: #FFFFFF;
+	cursor: pointer;
+	
+	font-size: 1vw;
+	
+	padding: 4px 10px 4px 10px;
+	margin-left: auto;
+}
+.window > .top-bar > .close:hover {
+	color: #FF0000;
+	
+	text-shadow: 0px 0px 10px #FF0000;
+}
+
+.window > .content {
+	position: relative;
+	
+	background-color: rgba(40, 40, 40, 0.8);
+	
+	padding: 1px;
+}
+
+
+.inventory-window > .content .slots {
+	margin: 1px;
+	
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.inventory-window > .content .slots .row {
+	font-size: 0px;
+}
+
+.inventory-window > .content .slot {
+	display: inline-block;
+	background-color: transparent;
+}
+
+.inventory-window > .content .slot .inner {
+	margin: 1px;
+	
+	pointer-events: none;
+}
+.inventory-window > .content .slot.state-empty .inner {
+	background-color: rgba(10, 10, 10, 0.3);
+}
+.inventory-window > .content .slot.state-item .inner {
+	background-color: rgba(52, 107, 51, 0.3);
+}
+.inventory-window > .content .slot.state-hover .inner {
+	background-color: rgba(255, 255, 255, 0.3);
+}
+.inventory-window > .content .slot.state-hover-item .inner {
+	background-color: rgba(255, 0, 0, 0.3);
+}
+
+
+.item {
+	position: absolute;
+	
+	transform-origin: top left;
+	
+	z-index: 100;
+}
+.item.state-none {
+	
+}
+.item.state-inventory {
+	
+}
+.item.state-selected {
+	filter: drop-shadow(0px 0px 2px rgba(0, 80, 255, 1)) drop-shadow(0px 0px 2px rgba(0, 80, 255, 1)) drop-shadow(0px 0px 2px rgba(0, 80, 255, 1));
+}
+.item.state-dragging {
+	filter: drop-shadow(0px 0px 2px rgba(0, 80, 255, 1)) drop-shadow(0px 0px 2px rgba(0, 80, 255, 1)) drop-shadow(0px 0px 2px rgba(0, 80, 255, 1));
+}
+.item.state-invalid {
+	filter: drop-shadow(0px 0px 2px rgba(255, 0, 0, 1)) drop-shadow(0px 0px 2px rgba(255, 0, 0, 1)) drop-shadow(0px 0px 2px rgba(255, 0, 0, 1));
+}
+
+.label-percentage-positive {
+	color: #33FF33;
+}
+.label-percentage-negative {
+	color: #FF3333;
+}
+.label-health {
+	color: #bc2020;
+}
+.label-hunger {
+	color: #b2ff00;
+}
+.label-thirst {
+	color: #00a9ff;
+}
+.label-repair {
+	color: #fffc82;
+}

@@ -1,0 +1,8 @@
+{
+  "name": "grid-inventory",
+  "version": "1.0.0",
+  "main": "main.js",
+
+  "author": "Thomas Terp <thomascterp@gmail.com>",
+  "license": "MIT"
+}
