@@ -1,8 +1,14 @@
 {
-  "name": "grid-inventory",
-  "version": "1.0.0",
-  "main": "main.js",
-
-  "author": "Thomas Terp <thomascterp@gmail.com>",
-  "license": "MIT"
+	"name": "jc3mp-inventory",
+	"version": "1.0.0",
+	"main": "main.js",
+	"author": "Thomas Terp <thomascterp@gmail.com>",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/node": "^6.0.55"
+	},
+	"dependencies": {
+		"types-jcmp": "*",
+		"ts-loader": ">=1.3.3"
+	}
 }

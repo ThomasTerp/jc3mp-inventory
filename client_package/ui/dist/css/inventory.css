@@ -25,6 +25,21 @@ body {
 	font-family: 'Open Sans';
 }
 
+
+
+::-webkit-scrollbar
+{
+	background-color: transparent;
+	width: 8px;
+}
+
+::-webkit-scrollbar-thumb
+{
+	border-radius: 4px;
+	background-color: rgba(10, 10, 10, 0.5);
+}
+
+
 .item-selection {
 	position: absolute;
 	
@@ -140,6 +155,16 @@ body {
 }
 
 
+.admin-window {
+	
+}
+
+.admin-window > .content > .items {
+	height: 80vh;
+	overflow-y: scroll;
+}
+
+
 .item {
 	position: absolute;
 	
@@ -154,13 +179,13 @@ body {
 	
 }
 .item.state-selected {
-	filter: drop-shadow(0px 0px 2px rgba(0, 80, 255, 1)) drop-shadow(0px 0px 2px rgba(0, 80, 255, 1)) drop-shadow(0px 0px 2px rgba(0, 80, 255, 1));
+	-webkit-filter: drop-shadow(0px 0px 2px rgba(0, 80, 255, 1)) drop-shadow(0px 0px 2px rgba(0, 80, 255, 1)) drop-shadow(0px 0px 2px rgba(0, 80, 255, 1));
 }
 .item.state-dragging {
-	filter: drop-shadow(0px 0px 2px rgba(0, 80, 255, 1)) drop-shadow(0px 0px 2px rgba(0, 80, 255, 1)) drop-shadow(0px 0px 2px rgba(0, 80, 255, 1));
+	-webkit-filter: drop-shadow(0px 0px 2px rgba(0, 80, 255, 1)) drop-shadow(0px 0px 2px rgba(0, 80, 255, 1)) drop-shadow(0px 0px 2px rgba(0, 80, 255, 1));
 }
 .item.state-invalid {
-	filter: drop-shadow(0px 0px 2px rgba(255, 0, 0, 1)) drop-shadow(0px 0px 2px rgba(255, 0, 0, 1)) drop-shadow(0px 0px 2px rgba(255, 0, 0, 1));
+	-webkit-filter: drop-shadow(0px 0px 2px rgba(255, 0, 0, 1)) drop-shadow(0px 0px 2px rgba(255, 0, 0, 1)) drop-shadow(0px 0px 2px rgba(255, 0, 0, 1));
 }
 
 .label-percentage-positive {

@@ -1,10 +1,23 @@
 "use strict";
-window.gridInventory = window.gridInventory || {};
+import * as Util from "./util";
+import * as ItemManager from "./itemManager";
+import {Window} from "./window";
+import {InventorySlot} from "./inventorySlot";
+import {ItemDrag} from "./itemDrag";
+import {Item} from "./item";
+import {Vector2} from "./vector2";
 
 
-gridInventory.InventoryWindow = class extends gridInventory.Window
+class InventoryWindow extends Window
 {
-	constructor(titleHTML, size)
+	size: Vector2;
+	items: Item[];
+	slots: InventorySlot[][];
+	
+	private slotsHTML: JQuery;
+	private itemsHTML: JQuery;
+	
+	constructor(titleHTML: string, size: Vector2)
 	{
 		super(titleHTML);
 		
@@ -12,18 +25,20 @@ gridInventory.InventoryWindow = class extends gridInventory.Window
 		this.items = [];
 		this.slots = [];
 		
-		this._createContentHTML();
+		this.createContentHTML();
 		this.updateHTML();
 	}
 	
-	_createHTML()
+	protected createHTML(): JQuery
 	{
-		super._createHTML();
+		super.createHTML();
 		
 		this.html.addClass("inventory-window");
+		
+		return this.html;
 	}
 	
-	_createContentHTML()
+	private createContentHTML(): JQuery
 	{
 		this.contentHTML.html(`
 			<div class="slots"></div>
@@ -32,18 +47,15 @@ gridInventory.InventoryWindow = class extends gridInventory.Window
 		this.slotsHTML = this.contentHTML.find(".slots");
 		this.itemsHTML = this.contentHTML.find(".items");
 		
-		for(let y = 0; y < this.size.height; y++)
+		for(let y = 0; y < this.size.y; y++)
 		{
 			let rowHTML = $('<div class="row"></div>');
 			
 			this.slots[y] = [];
 			
-			for(let x = 0; x < this.size.width; x++)
+			for(let x = 0; x < this.size.x; x++)
 			{
-				this.slots[y][x] = new gridInventory.InventorySlot(this, {
-					x: x,
-					y: y
-				});
+				this.slots[y][x] = new InventorySlot(this, new Vector2(x, y));
 				
 				rowHTML.append(this.slots[y][x].html);
 			}
@@ -54,16 +66,13 @@ gridInventory.InventoryWindow = class extends gridInventory.Window
 		//Item dragging
 		this.slotsHTML.on("mousedown", ".slot", (event) =>
 		{
-			if(!isCtrlPressed)
+			if(!Util.isCtrlPressed())
 			{
-				let slot = $(event.currentTarget).data("slot");
+				let slot: InventorySlot = $(event.currentTarget).data("slot");
 				
 				if(slot && slot.item)
 				{
-					slot.item.itemManager.startDragging(slot.item, {
-						x: event.pageX,
-						y: event.pageY
-					});
+					ItemManager.startDragging(slot.item, new Vector2(event.pageX, event.pageY));
 					
 					event.preventDefault();
 				}
@@ -73,9 +82,9 @@ gridInventory.InventoryWindow = class extends gridInventory.Window
 		return this.contentHTML;
 	}
 	
-	updateHTML()
+	updateHTML(): void
 	{
-		let slotSize = gridInventory.InventorySlot.getPixelSize();
+		let slotSize = InventorySlot.getPixelSize();
 		let inner = this.slotsHTML.find(".slot .inner");
 		
 		inner.css({
@@ -87,11 +96,11 @@ gridInventory.InventoryWindow = class extends gridInventory.Window
 		{
 			this.updateItemHTMLPosition(item);
 		});
-	};
+	}
 	
-	updateItemHTMLPosition(item)
+	updateItemHTMLPosition(item: Item): void
 	{
-		let slot = this.getSlot(item.position);
+		let slot = this.getSlot(item.inventoryPosition);
 		let slotHTMLPosition = slot.html.position();
 		
 		item.html.css({
@@ -100,12 +109,12 @@ gridInventory.InventoryWindow = class extends gridInventory.Window
 		});
 	}
 	
-	getSlot(position)
+	getSlot(position: Vector2): InventorySlot
 	{
 		return this.slots[position.y][position.x];
 	}
 	
-	setSlotsItem(item)
+	setSlotsItem(item: Item): void
 	{
 		for(let y = 0; y < item.slots.length; y++)
 		{
@@ -115,10 +124,7 @@ gridInventory.InventoryWindow = class extends gridInventory.Window
 				
 				if(isSolid)
 				{
-					let slot = this.getSlot({
-						x: item.position.x + x,
-						y: item.position.y + y
-					});
+					let slot = this.getSlot(new Vector2(item.inventoryPosition.x + x, item.inventoryPosition.y + y));
 					slot.state = "item";
 					slot.item = item;
 				}
@@ -126,7 +132,7 @@ gridInventory.InventoryWindow = class extends gridInventory.Window
 		}
 	}
 	
-	unsetSlotsItem(item)
+	unsetSlotsItem(item: Item): void
 	{
 		for(let y = 0; y < item.slots.length; y++)
 		{
@@ -136,28 +142,25 @@ gridInventory.InventoryWindow = class extends gridInventory.Window
 				
 				if(isSolid)
 				{
-					let slot = this.getSlot({
-						x: item.position.x + x,
-						y: item.position.y + y
-					});
+					let slot = this.getSlot(new Vector2(item.inventoryPosition.x + x, item.inventoryPosition.y + y));
 					slot.state = "empty";
 					slot.item = undefined;
 					
 					//Required for a rare bug
-					slotModifications.set(slot, slot.state);
+					ItemDrag.slotModifications.set(slot, slot.state);
 				}
 			}
 		}
 	}
 	
-	addItem(item, position)
+	addItem(item: Item, position: Vector2): void
 	{
 		this.items[item.id] = item;
 		
 		item.createHTML();
 		
-		item.inventory = this;
-		item.position = position;
+		item.inventoryWindow = this;
+		item.inventoryPosition = position;
 		item.state = "inventory";
 		
 		this.updateItemHTMLPosition(item);
@@ -167,29 +170,29 @@ gridInventory.InventoryWindow = class extends gridInventory.Window
 		this.html.find(".items").append(item.html);
 		
 		this.setSlotsItem(item);
-	};
+	}
 	
-	removeItem(item)
+	removeItem(item: Item): void
 	{
 		this.unsetSlotsItem(item);
 		
-		item.inventory = undefined;
-		item.position = undefined;
+		item.inventoryWindow = undefined;
+		item.inventoryPosition = undefined;
 		item.state = "invalid";
 		
 		item.html.detach().appendTo("body > .items");
 		
 		delete this.items[item.id];
-	};
+	}
 	
-	isItemWithinInventory(item, position)
+	isItemWithinInventory(item: Item, position: Vector2): boolean
 	{
 		let itemSize = item.getSize();
 		
-		return position.x + itemSize.width <= this.size.width && position.y + itemSize.height <= this.size.height;
-	};
+		return position.x + itemSize.width <= this.size.x && position.y + itemSize.height <= this.size.y;
+	}
 	
-	canItemBePlaced(item, position)
+	canItemBePlaced(item: Item, position: Vector2): boolean
 	{
 		let itemSize = item.getSize();
 		
@@ -201,10 +204,7 @@ gridInventory.InventoryWindow = class extends gridInventory.Window
 				
 				if(isSolid)
 				{
-					let slot = this.getSlot({
-						x: position.x + x,
-						y: position.y + y
-					});
+					let slot = this.getSlot(new Vector2(position.x + x, position.y + y));
 					
 					if(slot.item)
 					{
@@ -215,12 +215,13 @@ gridInventory.InventoryWindow = class extends gridInventory.Window
 		}
 		
 		return true
-	};
+	}
 	
-	onResize()
+	onResize(): void
 	{
 		super.onResize();
 		
 		this.updateHTML();
 	}
 }
+export {InventoryWindow};

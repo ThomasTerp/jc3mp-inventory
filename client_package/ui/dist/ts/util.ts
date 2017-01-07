@@ -1,17 +1,17 @@
 "use strict";
-window.gridInventory = window.gridInventory || {};
+import {Vector2} from "./vector2";
 
 
 //Modulo
-gridInventory.mod = function(number, mod)
+export function mod(number: number, mod: number): number
 {
 	return ((number % mod) + mod) % mod;
 };
 
 //Rotate a 2D array
-gridInventory.rotateMatrix = function(matrix, direction)
+export function rotateMatrix(matrix: any[][], direction: number): any[][]
 {
-	direction = gridInventory.mod(direction, 360) || 0;
+	direction = mod(direction, 360) || 0;
 
 	//Efficiently builds and fills values at the same time.
 	let transpose = function(m)
@@ -86,7 +86,7 @@ gridInventory.rotateMatrix = function(matrix, direction)
 	return matrix;
 };
 
-gridInventory.cloneObject = function(objectToClone)
+export function cloneObject(objectToClone: any): any
 {
    let objectClone = (objectToClone instanceof Array) ? [] : {};
    
@@ -99,7 +99,7 @@ gridInventory.cloneObject = function(objectToClone)
 	  
       if(objectToClone[index] && typeof objectToClone[index] == "object")
 	  {
-         objectClone[index] = gridInventory.cloneObject(objectToClone[index]);
+         objectClone[index] = cloneObject(objectToClone[index]);
       }
 	  else
 	  {
@@ -110,7 +110,7 @@ gridInventory.cloneObject = function(objectToClone)
    return objectClone;
 };
 
-gridInventory.capitalizeFirstLetter = function(text)
+export function capitalizeFirstLetter(text: string): string
 {
     return text.charAt(0).toUpperCase() + text.slice(1);
 };
@@ -118,21 +118,16 @@ gridInventory.capitalizeFirstLetter = function(text)
 
 //Cursor position
 
-let cursorPosition = {
-	x: 0,
-	y: 0
-}
+let cursorPosition = new Vector2(0, 0);
 
 $(window).on("mousemove", (event) =>
 {
-	cursorPosition = {
-		x: event.pageX,
-		y: event.pageY
-	};
+	cursorPosition.x = event.pageX;
+	cursorPosition.y = event.pageY;
 });
 
 //Returns a position object for the cursor position
-gridInventory.getCursorPosition = function()
+export function getCursorPosition(): Vector2
 {
 	return cursorPosition;
 };
@@ -140,14 +135,14 @@ gridInventory.getCursorPosition = function()
 
 //Is CTRL pressed
 
-let isCtrlPressed = false;
+let isCtrlPressedBool = false;
 
 $(window).on("keydown", (event) =>
 {
 	//CTRL
 	if(event.which == 17)
 	{
-		isCtrlPressed = true;
+		isCtrlPressedBool = true;
 	}
 });
 
@@ -156,12 +151,12 @@ $(window).on("keyup", (event) =>
 	//CTRL
 	if(event.which == 17)
 	{
-		isCtrlPressed = false;
+		isCtrlPressedBool = false;
 	}
 });
 
 //Returns true if CTRL is pressed
-gridInventory.isCtrlPressed = function()
+export function isCtrlPressed(): boolean
 {
-	return isCtrlPressed;
+	return isCtrlPressedBool;
 };

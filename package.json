@@ -1,8 +1,25 @@
 {
-  "name": "grid-inventory",
-  "version": "1.0.0",
-  "main": "main.js",
-
-  "author": "Thomas Terp <thomascterp@gmail.com>",
-  "license": "MIT"
+	"name": "jc3mp-inventory",
+	"version": "1.0.0",
+	"main": "main.js",
+	"author": "Thomas Terp <thomascterp@gmail.com>",
+	"license": "MIT",
+	"description": "This is a inventory for Just Cause 3 Multiplayer. It is not working in game, yet.",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ThomasTerp/jc3mp-inventory.git"
+	},
+	"keywords": [
+		"jc3mp"
+	],
+	"bugs": {
+		"url": "https://github.com/ThomasTerp/jc3mp-inventory/issues"
+	},
+	"homepage": "https://github.com/ThomasTerp/jc3mp-inventory#readme",
+	"dependencies": {
+		"types-jcmp": "*"
+	}
 }

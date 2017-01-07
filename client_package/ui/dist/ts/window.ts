@@ -1,38 +1,60 @@
 "use strict";
-window.gridInventory = window.gridInventory || {};
 
 
 //Class for a draggable window
-gridInventory.Window = class
+abstract class Window
 {
-	constructor(titleHTML, contentHTML)
-	{
-		this._createHTML();
-		
-		this.uniqueName = null;
-		this.windowManager = null;
-		this.titleHTML.html(titleHTML);
-		this.contentHTML.html(contentHTML);
-	}
+	html: JQuery;
+	titleHTML: JQuery;
+	contentHTML: JQuery;
 	
-	destroy()
-	{
-		this._removeHTML();
-	}
-	
-	set uniqueName(value)
+	private _uniqueName: string;
+	set uniqueName(value: string)
 	{
 		this._uniqueName = value;
 		
 		this.html.attr("id", "window-" + this.uniqueName);
 	}
-	
-	get uniqueName()
+	get uniqueName(): string
 	{
 		return this._uniqueName;
 	}
 	
-	_createHTML()
+	private _isVisible: boolean;
+	set isVisible(value: boolean)
+	{
+		this._isVisible = value;
+		
+		if(this.isVisible)
+		{
+			this.html.show();
+		}
+		else
+		{
+			this.html.hide();
+		}
+	}
+	get isVisible(): boolean
+	{
+		return this._isVisible;
+	}
+	
+	constructor(titleHTML: string)
+	{
+		this.createHTML();
+		
+		this.uniqueName = null;
+		this.titleHTML.html(titleHTML);
+		
+		this.show();
+	}
+	
+	destroy(): void
+	{
+		this.html.remove();
+	}
+	
+	protected createHTML() : JQuery
 	{
 		if(!this.html)
 		{
@@ -75,33 +97,30 @@ gridInventory.Window = class
 		return this.html;
 	}
 	
-	_removeHTML()
-	{
-		if(this.html)
-		{
-			this.html.remove();
-			this.html = undefined;
-		}
-	}
-	
-	moveToFront()
+	moveToFront(): void
 	{
 		$(".window").css("z-index", "");
 		this.html.css("z-index", "1");
 	}
 	
-	show()
+	show(): void
 	{
-		this.html.show();
+		this.isVisible = true;
 	}
 
-	hide()
+	hide(): void
 	{
-		this.html.hide();
+		this.isVisible = false;
 	}
 	
-	onResize()
+	toggle(): void
+	{
+		this.isVisible = !this.isVisible;
+	}
+	
+	onResize(): void
 	{
 		
 	}
 }
+export {Window};

@@ -1,11 +1,80 @@
 "use strict";
-window.gridInventory = window.gridInventory || {};
+import * as ItemTypeManager from "./itemTypeManager";
+import * as WindowManager from "./windowManager";
+import * as Util from "./util";
+import * as Labels from "./labels";
+import {InventoryWindow} from "./inventoryWindow";
+import {InventorySlot} from "./inventorySlot";
+import {ItemDrag} from "./itemDrag";
+import {Vector2} from "./vector2";
 
+
+//Makes sure all items gets put in the ItemTypeManagers
+export function initialize()
+{
+	//Yes, this is meant to be empty, I had to do it because of how importing works I think
+}
 
 //Item base
-gridInventory.Item = class
+abstract class Item
 {
-	constructor(id)
+	id: number;
+	rotation: number;
+	isFlipped: boolean;
+	isSelected: boolean;
+	padding: number;
+	html: JQuery
+	slots: number[][];
+	inventoryWindow: InventoryWindow;
+	inventoryPosition: Vector2;
+	itemDrag: ItemDrag;
+	category: string;
+	name: string;
+	description: string;
+	
+	_src: string;
+	set src(value)
+	{
+		this._src = value;
+		
+		this.html.attr("src", this.src);
+	}
+	get src()
+	{
+		return this._src;
+	}
+	
+	_defaultSlots: number[][]
+	set defaultSlots(value)
+	{
+		this._defaultSlots = value;
+		this.slots = this.getDefaultSlotsClone();
+		
+		this.updateHTML();
+	}
+	get defaultSlots()
+	{
+		return this._defaultSlots;
+	}
+	
+	_state: string;
+	//The state will be added with a "state-" prefix as html class
+	//States: "none", "inventory", "selected", "dragging", "invalid"
+	set state(value)
+	{
+		//Remove old state
+		this.html.removeClass("state-" + this._state);
+		//Add new state
+		this.html.addClass("state-" + value);
+		
+		this._state = value;
+	}
+	get state()
+	{
+		return this._state;
+	}
+	
+	constructor(id: number)
 	{
 		this.createHTML();
 		
@@ -26,56 +95,14 @@ gridInventory.Item = class
 		];
 	}
 	
-	set src(value)
-	{
-		this._src = value;
-		
-		this.html.attr("src", this.src);
-	}
-	
-	get src()
-	{
-		return this._src;
-	}
-	
 	get tooltip()
 	{
 		return "<b>" + this.name + "</b><br />" + this.description;
 	}
 	
-	set defaultSlots(value)
-	{
-		this._defaultSlots = value;
-		this.slots = this.getDefaultSlotsClone();
-		
-		this.updateHTML();
-	}
-	
-	get defaultSlots()
-	{
-		return this._defaultSlots;
-	}
-	
-	//The state will be added with a "state-" prefix as html class
-	//States: "none", "inventory", "selected", "dragging", "invalid"
-	set state(value)
-	{
-		//Remove old state
-		this.html.removeClass("state-" + this._state);
-		//Add new state
-		this.html.addClass("state-" + value);
-		
-		this._state = value;
-	}
-	
-	get state()
-	{
-		return this._state;
-	}
-	
 	getDefaultSlotsClone()
 	{
-		return gridInventory.cloneObject(this.defaultSlots);
+		return Util.cloneObject(this.defaultSlots);
 	}
 	
 	createHTML()
@@ -176,7 +203,7 @@ gridInventory.Item = class
 	getPixelDefaultSize()
 	{
 		let defaultSize = this.getDefaultSize();
-		let slotSize = gridInventory.InventorySlot.getPixelSize() + 2;
+		let slotSize = InventorySlot.getPixelSize() + 2;
 		
 		return {
 			width: slotSize * defaultSize.width - 1,
@@ -188,7 +215,7 @@ gridInventory.Item = class
 	getPixelSize()
 	{
 		let size = this.getSize();
-		let slotSize = gridInventory.InventorySlot.getPixelSize();
+		let slotSize = InventorySlot.getPixelSize();
 		
 		return {
 			width: slotSize * size.width * 1,
@@ -213,8 +240,8 @@ gridInventory.Item = class
 			
 			let cursorOffset = this.itemDrag.getCursorOffset();
 			
-			this.itemDrag.offset.top -= this.getPixelSize().width - cursorOffset.top - cursorOffset.left;
-			this.itemDrag.offset.left -= cursorOffset.top - cursorOffset.left;
+			this.itemDrag.offset.y -= this.getPixelSize().width - cursorOffset.y - cursorOffset.x;
+			this.itemDrag.offset.x -= cursorOffset.y - cursorOffset.x;
 			
 			
 			this.updateSlots();
@@ -238,8 +265,8 @@ gridInventory.Item = class
 			
 			let cursorOffset = this.itemDrag.getCursorOffset();
 			
-			this.itemDrag.offset.top -= cursorOffset.left - cursorOffset.top;
-			this.itemDrag.offset.left -= this.getPixelSize().height - cursorOffset.left - cursorOffset.top;
+			this.itemDrag.offset.y -= cursorOffset.x - cursorOffset.y;
+			this.itemDrag.offset.x -= this.getPixelSize().height - cursorOffset.x - cursorOffset.y;
 			
 			
 			this.updateSlots();
@@ -258,16 +285,16 @@ gridInventory.Item = class
 			
 			if(this.rotation == 0 || this.rotation == 180)
 			{
-				this.itemDrag.offset.left -= (this.getPixelDefaultSize().width * 0.5 - this.itemDrag.getCursorOffset().left) * 2;
+				this.itemDrag.offset.x -= (this.getPixelDefaultSize().width * 0.5 - this.itemDrag.getCursorOffset().x) * 2;
 			}
 			else
 			{
-				let oldOffsetTop = this.itemDrag.offset.top;
+				let oldOffsetTop = this.itemDrag.offset.y;
 				
 				this.rotateClockwise();
 				this.rotateClockwise();
 				
-				this.itemDrag.offset.top = oldOffsetTop;
+				this.itemDrag.offset.y = oldOffsetTop;
 			}
 			
 			
@@ -290,21 +317,25 @@ gridInventory.Item = class
 				}
 			}
 			
-			this.slots = gridInventory.rotateMatrix(this.slots, this.rotation);
+			this.slots = Util.rotateMatrix(this.slots, this.rotation);
 			
 			this.updateHTML();
 		}
 	}
 }
-
+export {Item}
 
 //TODO: Put these other items in another file
 
-gridInventory.FoodItem = class extends gridInventory.Item
+abstract class FoodItem extends Item
 {
-	constructor()
+	health: number;
+	hunger: number;
+	thirst: number;
+	
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.health = 0;
 		this.hunger = 0;
@@ -320,28 +351,29 @@ gridInventory.FoodItem = class extends gridInventory.Item
 		
 		if(this.health !== 0)
 		{
-			description += `Restore ` + gridInventory.labels.health() + ` by ` + gridInventory.labels.percentage(this.health);
+			description += `Restore ` + Labels.health() + ` by ` + Labels.percentage(this.health);
 		}
 		
 		if(this.hunger !== 0)
 		{
-			description += (this.hunger > 0 ? `Decrease` : `Increase`) + ` ` + gridInventory.labels.hunger() + ` by ` + gridInventory.labels.percentage(this.hunger) + `<br />`;
+			description += (this.hunger > 0 ? `Decrease` : `Increase`) + ` ` + Labels.hunger() + ` by ` + Labels.percentage(this.hunger) + `<br />`;
 		}
 		
 		if(this.thirst !== 0)
 		{
-			description += (this.thirst > 0 ? `Decrease` : `Increase`) + ` ` + gridInventory.labels.thirst() + ` by ` + gridInventory.labels.percentage(this.thirst) + `<br />`;
+			description += (this.thirst > 0 ? `Decrease` : `Increase`) + ` ` + Labels.thirst() + ` by ` + Labels.percentage(this.thirst) + `<br />`;
 		}
 		
 		this.description = description;
 	}
 }
+export {FoodItem}
 
-gridInventory.AppleItem = class extends gridInventory.FoodItem
+class AppleItem extends FoodItem
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.hunger = 30;
 		this.thirst = 20;
@@ -354,18 +386,19 @@ gridInventory.AppleItem = class extends gridInventory.FoodItem
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.AppleItem, [
+export {AppleItem}
+ItemTypeManager.add(AppleItem, [
 	() =>
 	{
-		return new gridInventory.AppleItem();
+		return new AppleItem(-1);
 	}
 ]);
 
-gridInventory.RavelloBeansItem = class extends gridInventory.FoodItem
+class RavelloBeansItem extends FoodItem
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.hunger = 40;
 		
@@ -378,18 +411,19 @@ gridInventory.RavelloBeansItem = class extends gridInventory.FoodItem
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.RavelloBeansItem, [
+export {RavelloBeansItem}
+ItemTypeManager.add(RavelloBeansItem, [
 	() =>
 	{
-		return new gridInventory.RavelloBeansItem();
+		return new RavelloBeansItem(-1);
 	}
 ]);
 
-gridInventory.LaisChipsItem = class extends gridInventory.FoodItem
+class LaisChipsItem extends FoodItem
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.padding = 4;
 		
@@ -406,18 +440,19 @@ gridInventory.LaisChipsItem = class extends gridInventory.FoodItem
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.LaisChipsItem, [
+export {LaisChipsItem}
+ItemTypeManager.add(LaisChipsItem, [
 	() =>
 	{
-		return new gridInventory.LaisChipsItem();
+		return new LaisChipsItem(-1);
 	}
 ]);
 
-gridInventory.SnikersItem = class extends gridInventory.FoodItem
+class SnikersItem extends FoodItem
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.hunger = 20;
 		
@@ -429,18 +464,19 @@ gridInventory.SnikersItem = class extends gridInventory.FoodItem
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.SnikersItem, [
+export {SnikersItem}
+ItemTypeManager.add(SnikersItem, [
 	() =>
 	{
-		return new gridInventory.SnikersItem();
+		return new SnikersItem(-1);
 	}
 ]);
 
-gridInventory.WaterBottleItem = class extends gridInventory.FoodItem
+class WaterBottleItem extends FoodItem
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.thirst = 65;
 		
@@ -454,18 +490,19 @@ gridInventory.WaterBottleItem = class extends gridInventory.FoodItem
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.WaterBottleItem, [
+export {WaterBottleItem}
+ItemTypeManager.add(WaterBottleItem, [
 	() =>
 	{
-		return new gridInventory.WaterBottleItem();
+		return new WaterBottleItem(-1);
 	}
 ]);
 
-gridInventory.MilkGallonItem = class extends gridInventory.FoodItem
+class MilkGallonItem extends FoodItem
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.padding = 6
 		
@@ -481,18 +518,19 @@ gridInventory.MilkGallonItem = class extends gridInventory.FoodItem
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.MilkGallonItem, [
+export {MilkGallonItem}
+ItemTypeManager.add(MilkGallonItem, [
 	() =>
 	{
-		return new gridInventory.MilkGallonItem();
+		return new MilkGallonItem(-1);
 	}
 ]);
 
-gridInventory.U39PlechovkaItem = class extends gridInventory.Item
+class U39PlechovkaItem extends Item
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.category = "Weapons";
 		this.name = "U-39 Plechovka";
@@ -503,18 +541,19 @@ gridInventory.U39PlechovkaItem = class extends gridInventory.Item
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.U39PlechovkaItem, [
+export {U39PlechovkaItem}
+ItemTypeManager.add(U39PlechovkaItem, [
 	() =>
 	{
-		return new gridInventory.U39PlechovkaItem();
+		return new U39PlechovkaItem(-1);
 	}
 ]);
 
-gridInventory.GasCanItem = class extends gridInventory.Item
+class GasCanItem extends Item
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.name = "Gas Can";
 		this.src = "dist/images/gas_can.png";
@@ -526,24 +565,24 @@ gridInventory.GasCanItem = class extends gridInventory.Item
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.GasCanItem, [
+export {GasCanItem}
+ItemTypeManager.add(GasCanItem, [
 	() =>
 	{
-		return new gridInventory.GasCanItem();
+		return new GasCanItem(-1);
 	}
 ]);
 
-gridInventory.BackpackItem = class extends gridInventory.Item
+class BackpackItem extends Item
 {
-	constructor(windowManager)
+	backpackInventoryWindow: InventoryWindow;
+	
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
-		this.backpackInventoryWindow = new gridInventory.InventoryWindow("Backpack", {
-			width: 4,
-			height: 6
-		});
-		windowManager.add("backpack" + this.id, this.backpackInventoryWindow);
+		this.backpackInventoryWindow = new InventoryWindow("Backpack", new Vector2(4, 6));
+		WindowManager.add("backpack" + this.id, this.backpackInventoryWindow);
 		
 		this.backpackInventoryWindow.hide();
 		
@@ -560,21 +599,24 @@ gridInventory.BackpackItem = class extends gridInventory.Item
 	
 	updateDescription()
 	{
-		this.description = `Size: ` + this.backpackInventoryWindow.size.width + `x` + this.backpackInventoryWindow.size.height;
+		this.description = `Size: ` + this.backpackInventoryWindow.size.x + `x` + this.backpackInventoryWindow.size.y;
 	}
 }
-gridInventory.itemTypes.add(gridInventory.BackpackItem, [
+export {BackpackItem}
+ItemTypeManager.add(BackpackItem, [
 	() =>
 	{
-		return new gridInventory.BackpackItem(gridInventory.windows);
+		return new BackpackItem(-1);
 	}
 ]);
 
-gridInventory.VehicleRepairItem = class extends gridInventory.Item
+abstract class VehicleRepairItem extends Item
 {
-	constructor()
+	repairAmount: number;
+	
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.repairAmount = 100;
 		
@@ -588,18 +630,19 @@ gridInventory.VehicleRepairItem = class extends gridInventory.Item
 		
 		if(this.repairAmount !== 0)
 		{
-			description = gridInventory.labels.repair(`Repair`) + ` a vehicle by ` + gridInventory.labels.percentage(this.repairAmount);
+			description = Labels.repair(`Repair`) + ` a vehicle by ` + Labels.percentage(this.repairAmount);
 		}
 		
 		this.description = description;
 	}
 }
+export {VehicleRepairItem}
 
-gridInventory.SmallWrenchItem = class extends gridInventory.VehicleRepairItem
+class SmallWrenchItem extends VehicleRepairItem
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.repairAmount = 20;
 		
@@ -611,18 +654,19 @@ gridInventory.SmallWrenchItem = class extends gridInventory.VehicleRepairItem
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.SmallWrenchItem, [
+export {SmallWrenchItem}
+ItemTypeManager.add(SmallWrenchItem, [
 	() =>
 	{
-		return new gridInventory.SmallWrenchItem();
+		return new SmallWrenchItem(-1);
 	}
 ]);
 
-gridInventory.BigWrenchItem = class extends gridInventory.VehicleRepairItem
+class BigWrenchItem extends VehicleRepairItem
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.repairAmount = 40;
 		
@@ -634,18 +678,19 @@ gridInventory.BigWrenchItem = class extends gridInventory.VehicleRepairItem
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.BigWrenchItem, [
+export {BigWrenchItem}
+ItemTypeManager.add(BigWrenchItem, [
 	() =>
 	{
-		return new gridInventory.BigWrenchItem();
+		return new BigWrenchItem(-1);
 	}
 ]);
 
-gridInventory.ToolboxItem = class extends gridInventory.VehicleRepairItem
+class ToolboxItem extends VehicleRepairItem
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.repairAmount = 100;
 		
@@ -658,18 +703,19 @@ gridInventory.ToolboxItem = class extends gridInventory.VehicleRepairItem
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.ToolboxItem, [
+export {ToolboxItem}
+ItemTypeManager.add(ToolboxItem, [
 	() =>
 	{
-		return new gridInventory.ToolboxItem();
+		return new ToolboxItem(-1);
 	}
 ]);
 
-gridInventory.MapItem = class extends gridInventory.Item
+class MapItem extends Item
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.name = "Map";
 		this.description = "It has a red marker";
@@ -680,18 +726,19 @@ gridInventory.MapItem = class extends gridInventory.Item
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.MapItem, [
+export {MapItem}
+ItemTypeManager.add(MapItem, [
 	() =>
 	{
-		return new gridInventory.MapItem();
+		return new MapItem(-1);
 	}
 ]);
 
-gridInventory.GrapplingHookItem = class extends gridInventory.Item
+class GrapplingHookItem extends Item
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.name = "Grappling Hook";
 		this.description = "";
@@ -702,18 +749,19 @@ gridInventory.GrapplingHookItem = class extends gridInventory.Item
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.GrapplingHookItem, [
+export {GrapplingHookItem}
+ItemTypeManager.add(GrapplingHookItem, [
 	() =>
 	{
-		return new gridInventory.GrapplingHookItem();
+		return new GrapplingHookItem(-1);
 	}
 ]);
 
-gridInventory.BavariumWingsuitItem = class extends gridInventory.Item
+class BavariumWingsuitItem extends Item
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.name = "Bavarium Wingsuit Booster";
 		this.description = "Requires wingsuit";
@@ -726,18 +774,19 @@ gridInventory.BavariumWingsuitItem = class extends gridInventory.Item
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.BavariumWingsuitItem, [
+export {BavariumWingsuitItem}
+ItemTypeManager.add(BavariumWingsuitItem, [
 	() =>
 	{
-		return new gridInventory.BavariumWingsuitItem();
+		return new BavariumWingsuitItem(-1);
 	}
 ]);
 
-gridInventory.PillsItem = class extends gridInventory.FoodItem
+class PillsItem extends FoodItem
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.health = 20;
 		
@@ -749,18 +798,19 @@ gridInventory.PillsItem = class extends gridInventory.FoodItem
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.PillsItem, [
+export {PillsItem}
+ItemTypeManager.add(PillsItem, [
 	() =>
 	{
-		return new gridInventory.PillsItem();
+		return new PillsItem(-1);
 	}
 ]);
 
-gridInventory.BandageItem = class extends gridInventory.FoodItem
+class BandageItem extends FoodItem
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.health = 50;
 		
@@ -773,19 +823,20 @@ gridInventory.BandageItem = class extends gridInventory.FoodItem
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.BandageItem, [
+export {BandageItem}
+ItemTypeManager.add(BandageItem, [
 	() =>
 	{
-		return new gridInventory.BandageItem();
+		return new BandageItem(-1);
 	}
 ]);
 
 
-gridInventory.FirstAidKitItem = class extends gridInventory.FoodItem
+class FirstAidKitItem extends FoodItem
 {
-	constructor()
+	constructor(id: number)
 	{
-		super();
+		super(id);
 		
 		this.health = 100;
 		
@@ -798,9 +849,10 @@ gridInventory.FirstAidKitItem = class extends gridInventory.FoodItem
 		];
 	}
 }
-gridInventory.itemTypes.add(gridInventory.FirstAidKitItem, [
+export {FirstAidKitItem}
+ItemTypeManager.add(FirstAidKitItem, [
 	() =>
 	{
-		return new gridInventory.FirstAidKitItem();
+		return new FirstAidKitItem(-1);
 	}
 ]);
