@@ -6,8 +6,8 @@ import {ItemDrag} from "./itemDrag";
 import {Vector2} from "./vector2";
 
 
-let itemsHTML = $("body > .items");
-let itemsMap: Map<number, Item> = new Map();
+const itemsHTML = $("body > .items");
+const itemsMap: Map<number, Item> = new Map();
 
 
 $(document.body).on("mousemove", (event) =>

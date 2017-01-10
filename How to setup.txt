@@ -1,0 +1,5 @@
+1. npm install
+2.
+
+typings:
+  typings install dt~jquery --global

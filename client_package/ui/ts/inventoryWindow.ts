@@ -26,7 +26,6 @@ class InventoryWindow extends Window
 		this.slots = [];
 		
 		this.createContentHTML();
-		this.updateHTML();
 	}
 	
 	protected createHTML(): JQuery
@@ -84,6 +83,8 @@ class InventoryWindow extends Window
 	
 	updateHTML(): void
 	{
+		super.updateHTML();
+		
 		let slotSize = InventorySlot.getPixelSize();
 		let inner = this.slotsHTML.find(".slot .inner");
 		

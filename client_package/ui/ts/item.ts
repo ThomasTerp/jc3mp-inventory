@@ -88,7 +88,7 @@ abstract class Item
 		this.category = "Misc";
 		this.name = "Item " + this.id;
 		this.description = "";
-		this.src = "dist/images/item_base.png";
+		this.src = "images/item_base.png";
 		this.defaultSlots = [
 			[1, 1],
 			[1, 1],
@@ -380,7 +380,7 @@ class AppleItem extends FoodItem
 		
 		this.name = "Apple";
 		this.updateDescription();
-		this.src = "dist/images/apple.png";
+		this.src = "images/apple.png";
 		this.defaultSlots = [
 			[1],
 		];
@@ -404,7 +404,7 @@ class RavelloBeansItem extends FoodItem
 		
 		this.name = "Ravello Beans";
 		this.updateDescription();
-		this.src = "dist/images/ravello_beans.png";
+		this.src = "images/ravello_beans.png";
 		this.defaultSlots = [
 			[1],
 			[1],
@@ -432,7 +432,7 @@ class LaisChipsItem extends FoodItem
 		
 		this.name = "Lais Chips";
 		this.updateDescription();
-		this.src = "dist/images/lais_chips.png";
+		this.src = "images/lais_chips.png";
 		this.defaultSlots = [
 			[1, 1],
 			[1, 1],
@@ -458,7 +458,7 @@ class SnikersItem extends FoodItem
 		
 		this.name = "Snikers";
 		this.updateDescription();
-		this.src = "dist/images/snikers.png";
+		this.src = "images/snikers.png";
 		this.defaultSlots = [
 			[1, 1],
 		];
@@ -482,7 +482,7 @@ class WaterBottleItem extends FoodItem
 		
 		this.name = "Water Bottle";
 		this.updateDescription();
-		this.src = "dist/images/water_bottle.png";
+		this.src = "images/water_bottle.png";
 		this.defaultSlots = [
 			[1],
 			[1],
@@ -510,7 +510,7 @@ class MilkGallonItem extends FoodItem
 		
 		this.name = "Milk Gallon";
 		this.updateDescription();
-		this.src = "dist/images/milk_gallon.png";
+		this.src = "images/milk_gallon.png";
 		this.defaultSlots = [
 			[1, 1],
 			[1, 1],
@@ -534,7 +534,7 @@ class U39PlechovkaItem extends Item
 		
 		this.category = "Weapons";
 		this.name = "U-39 Plechovka";
-		this.src = "dist/images/u39_plechovka.png";
+		this.src = "images/u39_plechovka.png";
 		this.defaultSlots = [
 			[1, 1, 1, 1, 1, 1],
 			[1, 1, 1, 1, 0, 0],
@@ -556,7 +556,7 @@ class GasCanItem extends Item
 		super(id);
 		
 		this.name = "Gas Can";
-		this.src = "dist/images/gas_can.png";
+		this.src = "images/gas_can.png";
 		this.defaultSlots = [
 			[1, 1],
 			[1, 1],
@@ -584,11 +584,9 @@ class BackpackItem extends Item
 		this.backpackInventoryWindow = new InventoryWindow("Backpack", new Vector2(4, 6));
 		WindowManager.add("backpack" + this.id, this.backpackInventoryWindow);
 		
-		this.backpackInventoryWindow.hide();
-		
 		this.name = "Backpack";
 		this.updateDescription();
-		this.src = "dist/images/backpack.png";
+		this.src = "images/backpack.png";
 		this.defaultSlots = [
 			[1, 1, 1],
 			[1, 1, 1],
@@ -648,7 +646,7 @@ class SmallWrenchItem extends VehicleRepairItem
 		
 		this.name = "Small Wrench";
 		this.updateDescription();
-		this.src = "dist/images/small_wrench.png";
+		this.src = "images/small_wrench.png";
 		this.defaultSlots = [
 			[1, 1]
 		];
@@ -672,7 +670,7 @@ class BigWrenchItem extends VehicleRepairItem
 		
 		this.name = "Big Wrench";
 		this.updateDescription();
-		this.src = "dist/images/big_wrench.png";
+		this.src = "images/big_wrench.png";
 		this.defaultSlots = [
 			[1, 1, 1],
 		];
@@ -696,7 +694,7 @@ class ToolboxItem extends VehicleRepairItem
 		
 		this.name = "Toolbox";
 		this.updateDescription();
-		this.src = "dist/images/toolbox.png";
+		this.src = "images/toolbox.png";
 		this.defaultSlots = [
 			[1, 1, 1],
 			[1, 1, 1],
@@ -719,7 +717,7 @@ class MapItem extends Item
 		
 		this.name = "Map";
 		this.description = "It has a red marker";
-		this.src = "dist/images/map.png";
+		this.src = "images/map.png";
 		this.defaultSlots = [
 			[1, 1],
 			[1, 1],
@@ -742,7 +740,7 @@ class GrapplingHookItem extends Item
 		
 		this.name = "Grappling Hook";
 		this.description = "";
-		this.src = "dist/images/grappling_hook.png";
+		this.src = "images/grappling_hook.png";
 		this.defaultSlots = [
 			[1, 1, 1, 1],
 			[1, 1, 1, 1],
@@ -765,7 +763,7 @@ class BavariumWingsuitItem extends Item
 		
 		this.name = "Bavarium Wingsuit Booster";
 		this.description = "Requires wingsuit";
-		this.src = "dist/images/bavarium_wingsuit.png";
+		this.src = "images/bavarium_wingsuit.png";
 		this.defaultSlots = [
 			[1, 1, 1],
 			[1, 1, 1],
@@ -792,7 +790,7 @@ class PillsItem extends FoodItem
 		
 		this.name = "Pills";
 		this.updateDescription();
-		this.src = "dist/images/pills.png";
+		this.src = "images/pills.png";
 		this.defaultSlots = [
 			[1],
 		];
@@ -816,7 +814,7 @@ class BandageItem extends FoodItem
 		
 		this.name = "Bandage";
 		this.updateDescription();
-		this.src = "dist/images/bandage.png";
+		this.src = "images/bandage.png";
 		this.defaultSlots = [
 			[1],
 			[1],
@@ -842,7 +840,7 @@ class FirstAidKitItem extends FoodItem
 		
 		this.name = "First Aid Kit";
 		this.updateDescription();
-		this.src = "dist/images/first_aid_kit.png";
+		this.src = "images/first_aid_kit.png";
 		this.defaultSlots = [
 			[1, 1],
 			[1, 1],

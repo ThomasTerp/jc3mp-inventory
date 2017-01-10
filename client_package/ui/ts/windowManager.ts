@@ -2,8 +2,8 @@
 import {Window} from "./window";
 
 
-let windowsHTML = $(".windows");
-let windowsMap: Map<string, Window> = new Map();
+const windowsHTML = $(".windows");
+const windowsMap: Map<string, Window> = new Map();
 
 $(window).on("resize", (event) =>
 {
@@ -65,4 +65,21 @@ export function forEach(callback: ForEachCallbackFunction): void
             break;
         }
     }
+}
+
+export function isAnyWindowVisible()
+{
+	let isAnyWindowVisible = false;
+	
+	forEach((uniqueName, window) =>
+	{
+		if(window.isVisible)
+		{
+			isAnyWindowVisible = true;
+			
+			return true;
+		}
+	});
+	
+	return isAnyWindowVisible;
 }

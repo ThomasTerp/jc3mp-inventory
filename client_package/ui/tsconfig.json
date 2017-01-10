@@ -5,7 +5,9 @@
 		"module": "commonjs",
 		"removeComments": true,
 		"types": [
-			"types-jcmp"
+			"types-jcmp",
+			"@types/jquery",
+			"@types/jqueryui"
 		]
 	},
 	"compileOnSave": false,

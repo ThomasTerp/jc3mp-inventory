@@ -46,34 +46,44 @@
 
 	"use strict";
 	__webpack_require__(1);
-	__webpack_require__(14);
+	__webpack_require__(13);
+	__webpack_require__(9);
 	const WindowManager = __webpack_require__(3);
 	const inventoryWindow_1 = __webpack_require__(7);
-	const adminWindow_1 = __webpack_require__(13);
+	const adminWindow_1 = __webpack_require__(14);
 	const vector2_1 = __webpack_require__(5);
-	//Local inventory
 	let localInventoryWindow = new inventoryWindow_1.InventoryWindow("Inventory", new vector2_1.Vector2(20, 12));
 	WindowManager.add("local", localInventoryWindow);
-	localInventoryWindow.hide();
-	//Loot crate 1
 	let lootInventoryWindow = new inventoryWindow_1.InventoryWindow("Loot Crate", new vector2_1.Vector2(10, 10));
 	WindowManager.add("loot1", lootInventoryWindow);
-	lootInventoryWindow.hide();
-	//Loot crate 2
 	let loot2InventoryWindow = new inventoryWindow_1.InventoryWindow("Loot Crate 2", new vector2_1.Vector2(10, 10));
 	WindowManager.add("loot2", loot2InventoryWindow);
-	loot2InventoryWindow.hide();
-	//Admin window
 	let adminWindow = new adminWindow_1.AdminWindow("Items");
 	WindowManager.add("adminWindow", adminWindow);
-	adminWindow.hide();
-	$(document).on("keydown", (event) => {
-	    //Key: I
-	    if (event.which == 73) {
-	        localInventoryWindow.toggle();
+	let chatIsOpen = false;
+	jcmp.AddEvent('chat_input_state', function (state) {
+	    chatIsOpen = state;
+	});
+	jcmp.AddEvent("jc3mp-inventory/ui/windowVisibilityChanged", (uniqueName, isVisible) => {
+	    if (isVisible) {
+	        jcmp.ShowCursor();
 	    }
-	    else if (event.which == 79) {
-	        adminWindow.toggle();
+	    else {
+	        jcmp.HideCursor();
+	    }
+	});
+	$(document).on("keydown", (event) => {
+	    if (!chatIsOpen) {
+	        switch (event.which) {
+	            case 73:
+	                localInventoryWindow.toggle();
+	                break;
+	            case 79:
+	                adminWindow.toggle();
+	                break;
+	            default:
+	                return;
+	        }
 	    }
 	});
 
@@ -90,12 +100,9 @@
 	const inventoryWindow_1 = __webpack_require__(7);
 	const inventorySlot_1 = __webpack_require__(11);
 	const vector2_1 = __webpack_require__(5);
-	//Makes sure all items gets put in the ItemTypeManagers
 	function initialize() {
-	    //Yes, this is meant to be empty, I had to do it because of how importing works I think
 	}
 	exports.initialize = initialize;
-	//Item base
 	class Item {
 	    set src(value) {
 	        this._src = value;
@@ -112,12 +119,8 @@
 	    get defaultSlots() {
 	        return this._defaultSlots;
 	    }
-	    //The state will be added with a "state-" prefix as html class
-	    //States: "none", "inventory", "selected", "dragging", "invalid"
 	    set state(value) {
-	        //Remove old state
 	        this.html.removeClass("state-" + this._state);
-	        //Add new state
 	        this.html.addClass("state-" + value);
 	        this._state = value;
 	    }
@@ -135,7 +138,7 @@
 	        this.category = "Misc";
 	        this.name = "Item " + this.id;
 	        this.description = "";
-	        this.src = "dist/images/item_base.png";
+	        this.src = "images/item_base.png";
 	        this.defaultSlots = [
 	            [1, 1],
 	            [1, 1],
@@ -162,7 +165,6 @@
 	            "padding": this.padding + "px",
 	        });
 	        this.html.css("transform", "rotate(" + -this.rotation + "deg) scaleX(" + (this.isFlipped ? "-1" : "1") + ")");
-	        //Adjust position for rotation and flipping
 	        let top = 0;
 	        let left = 0;
 	        if (this.rotation == 0) {
@@ -198,21 +200,18 @@
 	            "margin-left": left + "px"
 	        });
 	    }
-	    //Get size without rotations
 	    getDefaultSize() {
 	        return {
 	            width: this.defaultSlots[0].length,
 	            height: this.defaultSlots.length
 	        };
 	    }
-	    //Get size with rotations
 	    getSize() {
 	        return {
 	            width: this.slots[0].length,
 	            height: this.slots.length
 	        };
 	    }
-	    //Get pixel size without rotations
 	    getPixelDefaultSize() {
 	        let defaultSize = this.getDefaultSize();
 	        let slotSize = inventorySlot_1.InventorySlot.getPixelSize() + 2;
@@ -221,7 +220,6 @@
 	            height: slotSize * defaultSize.height - 1
 	        };
 	    }
-	    //Get pixel size with rotations
 	    getPixelSize() {
 	        let size = this.getSize();
 	        let slotSize = inventorySlot_1.InventorySlot.getPixelSize();
@@ -231,13 +229,11 @@
 	        };
 	    }
 	    rotateClockwise() {
-	        //Items can only be rotated while being dragged
 	        if (this.itemDrag && this.itemDrag.hasMoved) {
 	            this.rotation += 90;
 	            if (this.rotation >= 360) {
 	                this.rotation = 0;
 	            }
-	            //Adjust drag offset
 	            let cursorOffset = this.itemDrag.getCursorOffset();
 	            this.itemDrag.offset.y -= this.getPixelSize().width - cursorOffset.y - cursorOffset.x;
 	            this.itemDrag.offset.x -= cursorOffset.y - cursorOffset.x;
@@ -245,13 +241,11 @@
 	        }
 	    }
 	    rotateCounterClockwise() {
-	        //Items can only be rotated while being dragged
 	        if (this.itemDrag && this.itemDrag.hasMoved) {
 	            this.rotation -= 90;
 	            if (this.rotation < 0) {
 	                this.rotation = 270;
 	            }
-	            //Adjust drag offset
 	            let cursorOffset = this.itemDrag.getCursorOffset();
 	            this.itemDrag.offset.y -= cursorOffset.x - cursorOffset.y;
 	            this.itemDrag.offset.x -= this.getPixelSize().height - cursorOffset.x - cursorOffset.y;
@@ -259,10 +253,8 @@
 	        }
 	    }
 	    flip() {
-	        //Items can only be flipped while being dragged
 	        if (this.itemDrag && this.itemDrag.hasMoved) {
 	            this.isFlipped = !this.isFlipped;
-	            //Adjust drag offset
 	            if (this.rotation == 0 || this.rotation == 180) {
 	                this.itemDrag.offset.x -= (this.getPixelDefaultSize().width * 0.5 - this.itemDrag.getCursorOffset().x) * 2;
 	            }
@@ -276,7 +268,6 @@
 	        }
 	    }
 	    updateSlots() {
-	        //Slots can only be updated while being dragged
 	        if (this.itemDrag && this.itemDrag.hasMoved) {
 	            this.slots = this.getDefaultSlotsClone();
 	            if (this.isFlipped) {
@@ -290,7 +281,6 @@
 	    }
 	}
 	exports.Item = Item;
-	//TODO: Put these other items in another file
 	class FoodItem extends Item {
 	    constructor(id) {
 	        super(id);
@@ -322,7 +312,7 @@
 	        this.thirst = 20;
 	        this.name = "Apple";
 	        this.updateDescription();
-	        this.src = "dist/images/apple.png";
+	        this.src = "images/apple.png";
 	        this.defaultSlots = [
 	            [1],
 	        ];
@@ -340,7 +330,7 @@
 	        this.hunger = 40;
 	        this.name = "Ravello Beans";
 	        this.updateDescription();
-	        this.src = "dist/images/ravello_beans.png";
+	        this.src = "images/ravello_beans.png";
 	        this.defaultSlots = [
 	            [1],
 	            [1],
@@ -361,7 +351,7 @@
 	        this.thirst = -20;
 	        this.name = "Lais Chips";
 	        this.updateDescription();
-	        this.src = "dist/images/lais_chips.png";
+	        this.src = "images/lais_chips.png";
 	        this.defaultSlots = [
 	            [1, 1],
 	            [1, 1],
@@ -381,7 +371,7 @@
 	        this.hunger = 20;
 	        this.name = "Snikers";
 	        this.updateDescription();
-	        this.src = "dist/images/snikers.png";
+	        this.src = "images/snikers.png";
 	        this.defaultSlots = [
 	            [1, 1],
 	        ];
@@ -399,7 +389,7 @@
 	        this.thirst = 65;
 	        this.name = "Water Bottle";
 	        this.updateDescription();
-	        this.src = "dist/images/water_bottle.png";
+	        this.src = "images/water_bottle.png";
 	        this.defaultSlots = [
 	            [1],
 	            [1],
@@ -420,7 +410,7 @@
 	        this.thirst = 85;
 	        this.name = "Milk Gallon";
 	        this.updateDescription();
-	        this.src = "dist/images/milk_gallon.png";
+	        this.src = "images/milk_gallon.png";
 	        this.defaultSlots = [
 	            [1, 1],
 	            [1, 1],
@@ -439,7 +429,7 @@
 	        super(id);
 	        this.category = "Weapons";
 	        this.name = "U-39 Plechovka";
-	        this.src = "dist/images/u39_plechovka.png";
+	        this.src = "images/u39_plechovka.png";
 	        this.defaultSlots = [
 	            [1, 1, 1, 1, 1, 1],
 	            [1, 1, 1, 1, 0, 0],
@@ -456,7 +446,7 @@
 	    constructor(id) {
 	        super(id);
 	        this.name = "Gas Can";
-	        this.src = "dist/images/gas_can.png";
+	        this.src = "images/gas_can.png";
 	        this.defaultSlots = [
 	            [1, 1],
 	            [1, 1],
@@ -476,10 +466,9 @@
 	        super(id);
 	        this.backpackInventoryWindow = new inventoryWindow_1.InventoryWindow("Backpack", new vector2_1.Vector2(4, 6));
 	        WindowManager.add("backpack" + this.id, this.backpackInventoryWindow);
-	        this.backpackInventoryWindow.hide();
 	        this.name = "Backpack";
 	        this.updateDescription();
-	        this.src = "dist/images/backpack.png";
+	        this.src = "images/backpack.png";
 	        this.defaultSlots = [
 	            [1, 1, 1],
 	            [1, 1, 1],
@@ -519,7 +508,7 @@
 	        this.repairAmount = 20;
 	        this.name = "Small Wrench";
 	        this.updateDescription();
-	        this.src = "dist/images/small_wrench.png";
+	        this.src = "images/small_wrench.png";
 	        this.defaultSlots = [
 	            [1, 1]
 	        ];
@@ -537,7 +526,7 @@
 	        this.repairAmount = 40;
 	        this.name = "Big Wrench";
 	        this.updateDescription();
-	        this.src = "dist/images/big_wrench.png";
+	        this.src = "images/big_wrench.png";
 	        this.defaultSlots = [
 	            [1, 1, 1],
 	        ];
@@ -555,7 +544,7 @@
 	        this.repairAmount = 100;
 	        this.name = "Toolbox";
 	        this.updateDescription();
-	        this.src = "dist/images/toolbox.png";
+	        this.src = "images/toolbox.png";
 	        this.defaultSlots = [
 	            [1, 1, 1],
 	            [1, 1, 1],
@@ -573,7 +562,7 @@
 	        super(id);
 	        this.name = "Map";
 	        this.description = "It has a red marker";
-	        this.src = "dist/images/map.png";
+	        this.src = "images/map.png";
 	        this.defaultSlots = [
 	            [1, 1],
 	            [1, 1],
@@ -591,7 +580,7 @@
 	        super(id);
 	        this.name = "Grappling Hook";
 	        this.description = "";
-	        this.src = "dist/images/grappling_hook.png";
+	        this.src = "images/grappling_hook.png";
 	        this.defaultSlots = [
 	            [1, 1, 1, 1],
 	            [1, 1, 1, 1],
@@ -609,7 +598,7 @@
 	        super(id);
 	        this.name = "Bavarium Wingsuit Booster";
 	        this.description = "Requires wingsuit";
-	        this.src = "dist/images/bavarium_wingsuit.png";
+	        this.src = "images/bavarium_wingsuit.png";
 	        this.defaultSlots = [
 	            [1, 1, 1],
 	            [1, 1, 1],
@@ -630,7 +619,7 @@
 	        this.health = 20;
 	        this.name = "Pills";
 	        this.updateDescription();
-	        this.src = "dist/images/pills.png";
+	        this.src = "images/pills.png";
 	        this.defaultSlots = [
 	            [1],
 	        ];
@@ -648,7 +637,7 @@
 	        this.health = 50;
 	        this.name = "Bandage";
 	        this.updateDescription();
-	        this.src = "dist/images/bandage.png";
+	        this.src = "images/bandage.png";
 	        this.defaultSlots = [
 	            [1],
 	            [1],
@@ -667,7 +656,7 @@
 	        this.health = 100;
 	        this.name = "First Aid Kit";
 	        this.updateDescription();
-	        this.src = "dist/images/first_aid_kit.png";
+	        this.src = "images/first_aid_kit.png";
 	        this.defaultSlots = [
 	            [1, 1],
 	            [1, 1],
@@ -688,15 +677,12 @@
 
 	"use strict";
 	const itemTypeConstructorsMap = new Map();
-	//Add constructors array for an item type, each constructor should return a new item
-	//item: Item constructor()
 	function add(itemType, constructors) {
 	    remove(itemType);
 	    itemTypeConstructorsMap.set(itemType, constructors);
 	    return constructors;
 	}
 	exports.add = add;
-	//Delete the constructors array for an item type
 	function remove(itemType) {
 	    let constructors = get(itemType);
 	    if (constructors) {
@@ -704,13 +690,10 @@
 	    }
 	}
 	exports.remove = remove;
-	//Get the constructors array for an item type
 	function get(itemType) {
 	    return itemTypeConstructorsMap.get(itemType);
 	}
 	exports.get = get;
-	//Loop through all item types
-	//callback(itemType: typeof Item, constructors: ItemConstructorFunction[]): boolean
 	function forEach(callback) {
 	    for (let [itemType, constructors] of itemTypeConstructorsMap.entries()) {
 	        if (callback(itemType, constructors)) {
@@ -726,14 +709,13 @@
 /***/ function(module, exports) {
 
 	"use strict";
-	let windowsHTML = $(".windows");
-	let windowsMap = new Map();
+	const windowsHTML = $(".windows");
+	const windowsMap = new Map();
 	$(window).on("resize", (event) => {
 	    this.forEach((uniqueName, window) => {
 	        window.onResize();
 	    });
 	});
-	//Add a window and give it a unique name
 	function add(uniqueName, window) {
 	    window.uniqueName = uniqueName;
 	    remove(uniqueName);
@@ -742,7 +724,6 @@
 	    return window;
 	}
 	exports.add = add;
-	//Delete a window from the manager and detach its HTML
 	function remove(uniqueName) {
 	    let window = get(uniqueName);
 	    if (window) {
@@ -752,12 +733,10 @@
 	    }
 	}
 	exports.remove = remove;
-	//Get a window by its unique name
 	function get(uniqueName) {
 	    return windowsMap.get(uniqueName);
 	}
 	exports.get = get;
-	//Loop through all windows, return true to break
 	function forEach(callback) {
 	    for (let [uniqueName, window] of windowsMap.entries()) {
 	        if (callback(uniqueName, window)) {
@@ -766,6 +745,17 @@
 	    }
 	}
 	exports.forEach = forEach;
+	function isAnyWindowVisible() {
+	    let isAnyWindowVisible = false;
+	    forEach((uniqueName, window) => {
+	        if (window.isVisible) {
+	            isAnyWindowVisible = true;
+	            return true;
+	        }
+	    });
+	    return isAnyWindowVisible;
+	}
+	exports.isAnyWindowVisible = isAnyWindowVisible;
 
 
 /***/ },
@@ -774,16 +764,13 @@
 
 	"use strict";
 	const vector2_1 = __webpack_require__(5);
-	//Modulo
 	function mod(number, mod) {
 	    return ((number % mod) + mod) % mod;
 	}
 	exports.mod = mod;
 	;
-	//Rotate a 2D array
 	function rotateMatrix(matrix, direction) {
 	    direction = mod(direction, 360) || 0;
-	    //Efficiently builds and fills values at the same time.
 	    let transpose = function (m) {
 	        let result = new Array(m[0].length);
 	        for (let i = 0; i < m[0].length; i++) {
@@ -853,33 +840,27 @@
 	}
 	exports.capitalizeFirstLetter = capitalizeFirstLetter;
 	;
-	//Cursor position
 	let cursorPosition = new vector2_1.Vector2(0, 0);
 	$(window).on("mousemove", (event) => {
 	    cursorPosition.x = event.pageX;
 	    cursorPosition.y = event.pageY;
 	});
-	//Returns a position object for the cursor position
 	function getCursorPosition() {
 	    return cursorPosition;
 	}
 	exports.getCursorPosition = getCursorPosition;
 	;
-	//Is CTRL pressed
 	let isCtrlPressedBool = false;
 	$(window).on("keydown", (event) => {
-	    //CTRL
 	    if (event.which == 17) {
 	        isCtrlPressedBool = true;
 	    }
 	});
 	$(window).on("keyup", (event) => {
-	    //CTRL
 	    if (event.which == 17) {
 	        isCtrlPressedBool = false;
 	    }
 	});
-	//Returns true if CTRL is pressed
 	function isCtrlPressed() {
 	    return isCtrlPressedBool;
 	}
@@ -906,37 +887,30 @@
 /***/ function(module, exports) {
 
 	"use strict";
-	//Returns a span string with a css class
 	function spanClass(className, html) {
 	    return `<span class="` + className + `">` + html + `</span>`;
 	}
 	exports.spanClass = spanClass;
-	//Returns a span string with a css color
 	function spanColor(color, html) {
 	    return `<span style="color: ` + color + `;">` + html + `</span>`;
 	}
 	exports.spanColor = spanColor;
-	//Adds a percentage sign (%) after the number. If the number is positive, it will be green, if not, it will be red.
 	function percentage(amount) {
 	    return this.spanClass(amount >= 0 ? "label-percentage-positive" : "label-percentage-negative", Math.abs(amount) + `%`);
 	}
 	exports.percentage = percentage;
-	//Returns the health in red
 	function health(html = `health`) {
 	    return this.spanClass("label-health", html);
 	}
 	exports.health = health;
-	//Returns the hunger in green
 	function hunger(html = `hunger`) {
 	    return this.spanClass("label-hunger", html);
 	}
 	exports.hunger = hunger;
-	//Returns the thirst in blue
 	function thirst(html = `thirst`) {
 	    return this.spanClass("label-thirst", html);
 	}
 	exports.thirst = thirst;
-	//Returns the repair in yellow
 	function repair(html = `repair`) {
 	    return this.spanClass("label-repair", html);
 	}
@@ -961,7 +935,6 @@
 	        this.items = [];
 	        this.slots = [];
 	        this.createContentHTML();
-	        this.updateHTML();
 	    }
 	    createHTML() {
 	        super.createHTML();
@@ -984,7 +957,6 @@
 	            }
 	            this.slotsHTML.append(rowHTML);
 	        }
-	        //Item dragging
 	        this.slotsHTML.on("mousedown", ".slot", (event) => {
 	            if (!Util.isCtrlPressed()) {
 	                let slot = $(event.currentTarget).data("slot");
@@ -997,6 +969,7 @@
 	        return this.contentHTML;
 	    }
 	    updateHTML() {
+	        super.updateHTML();
 	        let slotSize = inventorySlot_1.InventorySlot.getPixelSize();
 	        let inner = this.slotsHTML.find(".slot .inner");
 	        inner.css({
@@ -1038,7 +1011,6 @@
 	                    let slot = this.getSlot(new vector2_1.Vector2(item.inventoryPosition.x + x, item.inventoryPosition.y + y));
 	                    slot.state = "empty";
 	                    slot.item = undefined;
-	                    //Required for a rare bug
 	                    itemDrag_1.ItemDrag.slotModifications.set(slot, slot.state);
 	                }
 	            }
@@ -1099,8 +1071,8 @@
 	const Util = __webpack_require__(4);
 	const itemDrag_1 = __webpack_require__(10);
 	const vector2_1 = __webpack_require__(5);
-	let itemsHTML = $("body > .items");
-	let itemsMap = new Map();
+	const itemsHTML = $("body > .items");
+	const itemsMap = new Map();
 	$(document.body).on("mousemove", (event) => {
 	    itemDrag_1.ItemDrag.undoSlotModifications();
 	    itemDrag_1.ItemDrag.forEachInItemManager((itemDrag) => {
@@ -1111,7 +1083,6 @@
 	        itemDrag.update();
 	    });
 	});
-	//Dropping of item drag
 	$(document.body).on("mouseup", (event) => {
 	    itemDrag_1.ItemDrag.forEachInItemManager((itemDrag) => {
 	        if (itemDrag.hasMoved) {
@@ -1140,7 +1111,6 @@
 	        delete itemDrag.item.itemDrag;
 	    });
 	});
-	//Dragging of items outside inventory
 	$(document.body).on("mousedown", ".item", (event) => {
 	    let item = $(event.currentTarget).data("item");
 	    if (item && get(item.id) && !Util.isCtrlPressed()) {
@@ -1153,23 +1123,18 @@
 	    itemDrag_1.ItemDrag.forEachInItemManager((itemDrag) => {
 	        if (itemDrag.hasMoved) {
 	            switch (event.which) {
-	                //Left
 	                case 37:
 	                    itemDrag.item.rotateClockwise();
 	                    break;
-	                //Up
 	                case 38:
 	                    itemDrag.item.flip();
 	                    break;
-	                //Right
 	                case 39:
 	                    itemDrag.item.rotateCounterClockwise();
 	                    break;
-	                //Down
 	                case 40:
 	                    itemDrag.item.flip();
 	                    break;
-	                //Exit this function if any other keys triggered the event
 	                default:
 	                    return;
 	            }
@@ -1182,10 +1147,8 @@
 	        item.updateHTML();
 	    });
 	});
-	//Start dragging selected items, this should be called inside a mousedown event
 	function startDragging(item, position) {
 	    if (!item.isSelected) {
-	        //Selection is canceled if item is not part of the selection, and the item becomes the only selected item
 	        ItemSelection.clearSelection();
 	        ItemSelection.setSelectedHTML(item, true);
 	        ItemSelection.selectedItems.set(item, true);
@@ -1214,12 +1177,10 @@
 	    }
 	}
 	exports.remove = remove;
-	//Get a window by its unique name
 	function get(id) {
 	    return itemsMap.get(id);
 	}
 	exports.get = get;
-	//Loop through all items, return true to break
 	function forEach(callback) {
 	    for (let [id, item] of itemsMap.entries()) {
 	        if (callback(id, item)) {
@@ -1236,18 +1197,17 @@
 
 	"use strict";
 	const ItemManager = __webpack_require__(8);
+	const WindowManager = __webpack_require__(3);
 	const Util = __webpack_require__(4);
+	const inventoryWindow_1 = __webpack_require__(7);
 	const vector2_1 = __webpack_require__(5);
-	//TODO: Do this in a better way
 	exports.selectingItems = new Map();
 	exports.selectedItems = new Map();
-	//Create selection when mouse is down
 	$("body").on("mousedown", (event) => {
 	    let shouldCreateItemSelection = true;
 	    let targetHTML = $(event.target);
 	    removeHTML();
 	    if (!Util.isCtrlPressed()) {
-	        //Selections can't be started on an item if ctrl is pressed
 	        if (targetHTML.hasClass("slot")) {
 	            let slot = targetHTML.data("slot");
 	            if (slot && slot.item) {
@@ -1258,8 +1218,17 @@
 	            shouldCreateItemSelection = false;
 	        }
 	    }
-	    //Selections can't be started in ui draggables
 	    if (targetHTML.closest(".ui-draggable-handle").length > 0) {
+	        shouldCreateItemSelection = false;
+	    }
+	    let isAnyInventoryWindowOpen = false;
+	    WindowManager.forEach((uniqueName, window) => {
+	        if (window.isVisible && window instanceof inventoryWindow_1.InventoryWindow) {
+	            isAnyInventoryWindowOpen = true;
+	            return true;
+	        }
+	    });
+	    if (!isAnyInventoryWindowOpen) {
 	        shouldCreateItemSelection = false;
 	    }
 	    if (shouldCreateItemSelection) {
@@ -1299,7 +1268,6 @@
 	function update() {
 	    if (exports.selectionHTML) {
 	        let cursorPosition = Util.getCursorPosition();
-	        //Update selection size
 	        exports.selectionHTML.css({
 	            "top": Math.min(cursorPosition.y, exports.selectionPosition.y),
 	            "left": Math.min(cursorPosition.x, exports.selectionPosition.x),
@@ -1310,7 +1278,6 @@
 	            let isSelected = false;
 	            if (item.inventoryWindow) {
 	                let itemSize = item.getSize();
-	                //Check if any inventory slot from the item is inside the selection
 	                checkForSlotsInSelection: for (let y = 0; y < itemSize.height; y++) {
 	                    for (let x = 0; x < itemSize.width; x++) {
 	                        let isSolid = item.slots[y][x] == 1;
@@ -1325,7 +1292,6 @@
 	                }
 	            }
 	            else {
-	                //If the item is outside an inventory
 	                if (isHTMLInsideSelection(item.html)) {
 	                    isSelected = true;
 	                }
@@ -1391,7 +1357,6 @@
 	const Util = __webpack_require__(4);
 	const inventorySlot_1 = __webpack_require__(11);
 	const vector2_1 = __webpack_require__(5);
-	//Class for dragging items
 	class ItemDrag {
 	    constructor(item, offset) {
 	        this.item = item;
@@ -1404,8 +1369,6 @@
 	        });
 	        ItemDrag.slotModifications.clear();
 	    }
-	    //Calls a provided function once per item with itemDrag, in an item manager
-	    //shouldBreak callback(itemDrag)
 	    static forEachInItemManager(callback) {
 	        ItemManager.forEach((id, item) => {
 	            if (item.itemDrag) {
@@ -1499,22 +1462,15 @@
 /***/ function(module, exports) {
 
 	"use strict";
-	//Class for a slot in an inventory
 	class InventorySlot {
 	    static getPixelSize() {
 	        return $(window).width() * 0.02 + 1;
 	    }
-	    //Set state of the slot
-	    //The state will be added with a "state-" prefix as html class
-	    //States: "empty", "item", "hover", "hover-item"
 	    set state(value) {
-	        //Remove old state
 	        this.html.removeClass("state-" + this._state);
-	        //Add new state
 	        this.html.addClass("state-" + value);
 	        this._state = value;
 	    }
-	    //Get state of the slot
 	    get state() {
 	        return this._state;
 	    }
@@ -1548,7 +1504,6 @@
 /***/ function(module, exports) {
 
 	"use strict";
-	//Class for a draggable window
 	class Window {
 	    set uniqueName(value) {
 	        this._uniqueName = value;
@@ -1561,10 +1516,12 @@
 	        this._isVisible = value;
 	        if (this.isVisible) {
 	            this.html.show();
+	            this.updateHTML();
 	        }
 	        else {
 	            this.html.hide();
 	        }
+	        jcmp.CallEvent("jc3mp-inventory/ui/windowVisibilityChanged", this.uniqueName, this.isVisible);
 	    }
 	    get isVisible() {
 	        return this._isVisible;
@@ -1573,7 +1530,7 @@
 	        this.createHTML();
 	        this.uniqueName = null;
 	        this.titleHTML.html(titleHTML);
-	        this.show();
+	        this.html.hide();
 	    }
 	    destroy() {
 	        this.html.remove();
@@ -1590,15 +1547,12 @@
 					<div>
 				`);
 	            this.html.data("window", this);
-	            //Move window to front when it gets pressed
 	            this.html.on("mousedown", (event) => {
 	                this.moveToFront();
 	            });
-	            //Close inventory when clicking on close button
 	            this.html.find(".close").on("click", (event) => {
 	                this.hide();
 	            });
-	            //Make window draggable
 	            this.html.draggable({
 	                handle: ".top-bar",
 	                snap: ".window",
@@ -1610,6 +1564,8 @@
 	            this.contentHTML = this.html.find(".content");
 	        }
 	        return this.html;
+	    }
+	    updateHTML() {
 	    }
 	    moveToFront() {
 	        $(".window").css("z-index", "");
@@ -1632,6 +1588,41 @@
 
 /***/ },
 /* 13 */
+/***/ function(module, exports) {
+
+	"use strict";
+	$(document).tooltip({
+	    track: true,
+	    items: ".slot, .item",
+	    hide: false,
+	    show: false,
+	    content: function () {
+	        let html = $(this);
+	        let item;
+	        if (html.hasClass("slot")) {
+	            let slot = html.data("slot");
+	            if (slot && slot.item) {
+	                item = slot.item;
+	            }
+	        }
+	        else if (html.hasClass("item")) {
+	            item = html.data("item");
+	        }
+	        if (item) {
+	            return item.tooltip;
+	        }
+	    }
+	});
+	$(document).on("mousedown", (event) => {
+	    $(document).tooltip("disable");
+	});
+	$(document).on("mouseup", (event) => {
+	    $(document).tooltip("enable");
+	});
+
+
+/***/ },
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -1657,7 +1648,6 @@
 	        return this.html;
 	    }
 	    bindEvents() {
-	        //On mousedown, create an item clone and start dragging it
 	        $(this.html).on("mousedown", { itemCloner: this }, (event) => {
 	            let position = this.html.offset();
 	            let item = this.itemConstructor();
@@ -1676,6 +1666,7 @@
 	class AdminWindow extends window_1.Window {
 	    constructor(titleHTML) {
 	        super(titleHTML);
+	        this.itemCloners = [];
 	        this.createContentHTML();
 	    }
 	    destroy() {
@@ -1691,49 +1682,26 @@
 	        this.itemsHTML = this.contentHTML.find(".items");
 	        ItemTypeManager.forEach((itemType, constructors) => {
 	            constructors.forEach((constructor, constructorIndex) => {
-	                this.itemsHTML.append(new ItemCloner(constructor).html);
+	                let itemCloner = new ItemCloner(constructor);
+	                this.itemCloners.push(itemCloner);
+	                this.itemsHTML.append(itemCloner.html);
 	            });
 	        });
 	        return this.contentHTML;
 	    }
+	    updateHTML() {
+	        super.updateHTML();
+	        let highestWidth = 64;
+	        this.itemCloners.forEach((itemCloner, itemClonerIndex) => {
+	            let itemClonerWidth = itemCloner.html.width();
+	            if (itemClonerWidth > highestWidth) {
+	                highestWidth = itemClonerWidth;
+	            }
+	        });
+	        this.itemsHTML.css("width", highestWidth + "px");
+	    }
 	}
 	exports.AdminWindow = AdminWindow;
-
-
-/***/ },
-/* 14 */
-/***/ function(module, exports) {
-
-	"use strict";
-	$(document).tooltip({
-	    track: true,
-	    items: ".slot, .item",
-	    hide: false,
-	    show: false,
-	    content: function () {
-	        console.log("content");
-	        let html = $(this);
-	        let item;
-	        if (html.hasClass("slot")) {
-	            let slot = html.data("slot");
-	            if (slot && slot.item) {
-	                item = slot.item;
-	            }
-	        }
-	        else if (html.hasClass("item")) {
-	            item = html.data("item");
-	        }
-	        if (item) {
-	            return item.tooltip;
-	        }
-	    }
-	});
-	$(document).on("mousedown", (event) => {
-	    $(document).tooltip("disable");
-	});
-	$(document).on("mouseup", (event) => {
-	    $(document).tooltip("enable");
-	});
 
 
 /***/ }

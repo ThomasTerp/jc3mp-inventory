@@ -1,15 +1,15 @@
 {
 	"compilerOptions": {
+		"alwaysStrict": true,
 		"target": "es6",
 		"module": "commonjs",
-		"sourceMap": true,
-		"jsx": "react",
+		"removeComments": true,
 		"types": [
 			"types-jcmp"
 		]
 	},
-	"exclude": [
-		"node_modules"
-	],
-	"compileOnSave": false
+	"compileOnSave": false,
+	"include": [
+		"ts"
+	]
 }

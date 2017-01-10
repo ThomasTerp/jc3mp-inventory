@@ -1,8 +1,10 @@
 "use strict";
 import * as ItemManager from "./itemManager";
+import * as WindowManager from "./windowManager";
 import * as Util from "./util";
 import {Item} from "./item";
 import {InventorySlot} from "./inventorySlot";
+import {InventoryWindow} from "./inventoryWindow";
 import {Vector2} from "./vector2";
 
 
@@ -45,6 +47,25 @@ $("body").on("mousedown", (event) =>
 	{
 		shouldCreateItemSelection = false;
 	}
+	
+	
+	let isAnyInventoryWindowOpen = false;
+	
+	WindowManager.forEach((uniqueName, window) =>
+	{
+		if(window.isVisible && window instanceof InventoryWindow)
+		{
+			isAnyInventoryWindowOpen = true;
+			
+			return true;
+		}
+	});
+	
+	if(!isAnyInventoryWindowOpen)
+	{
+		shouldCreateItemSelection = false;
+	}
+	
 	
 	if(shouldCreateItemSelection)
 	{

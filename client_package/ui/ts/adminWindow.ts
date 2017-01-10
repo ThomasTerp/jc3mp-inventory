@@ -63,10 +63,13 @@ export {ItemCloner};
 class AdminWindow extends Window
 {
 	itemsHTML: JQuery;
+	itemCloners: ItemCloner[];
 	
 	constructor(titleHTML: string)
 	{
 		super(titleHTML);
+		
+		this.itemCloners = [];
 		
 		this.createContentHTML();
 	}
@@ -94,11 +97,33 @@ class AdminWindow extends Window
 		{
 			constructors.forEach((constructor, constructorIndex) =>
 			{
-				this.itemsHTML.append(new ItemCloner(constructor).html);
+				let itemCloner = new ItemCloner(constructor)
+				
+				this.itemCloners.push(itemCloner);
+				this.itemsHTML.append(itemCloner.html);
 			});
 		});
 		
 		return this.contentHTML;
     }
+	
+	public updateHTML()
+	{
+		super.updateHTML();
+		
+		let highestWidth = 64;
+		
+		this.itemCloners.forEach((itemCloner, itemClonerIndex) =>
+		{
+			let itemClonerWidth = itemCloner.html.width();
+			
+			if(itemClonerWidth > highestWidth)
+			{
+				highestWidth = itemClonerWidth;
+			}
+		});
+		
+		this.itemsHTML.css("width", highestWidth + "px")
+	}
 }
 export {AdminWindow};

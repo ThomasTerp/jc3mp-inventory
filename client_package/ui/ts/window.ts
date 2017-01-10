@@ -1,4 +1,5 @@
 "use strict";
+import * as WindowManager from "./windowManager";
 
 
 //Class for a draggable window
@@ -7,6 +8,7 @@ abstract class Window
 	html: JQuery;
 	titleHTML: JQuery;
 	contentHTML: JQuery;
+	
 	
 	private _uniqueName: string;
 	set uniqueName(value: string)
@@ -28,11 +30,14 @@ abstract class Window
 		if(this.isVisible)
 		{
 			this.html.show();
+			this.updateHTML();
 		}
 		else
 		{
 			this.html.hide();
 		}
+		
+		jcmp.CallEvent("jc3mp-inventory/ui/windowVisibilityChanged", this.uniqueName, this.isVisible);
 	}
 	get isVisible(): boolean
 	{
@@ -46,7 +51,8 @@ abstract class Window
 		this.uniqueName = null;
 		this.titleHTML.html(titleHTML);
 		
-		this.show();
+		//Im avoiding this.hide() because I don't want to call the windowVisibilityChanged event the first time its hidden
+		this.html.hide();
 	}
 	
 	destroy(): void
@@ -95,6 +101,11 @@ abstract class Window
 		}
 		
 		return this.html;
+	}
+	
+	public updateHTML()
+	{
+		
 	}
 	
 	moveToFront(): void

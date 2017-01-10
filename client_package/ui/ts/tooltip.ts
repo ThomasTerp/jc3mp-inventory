@@ -10,7 +10,6 @@ $(document).tooltip({
 	show: false,
 	content: function()
 	{
-		console.log("content")
 		let html = $(this);
 		let item: Item;
 		

@@ -162,6 +162,11 @@ body {
 .admin-window > .content > .items {
 	height: 80vh;
 	overflow-y: scroll;
+	overflow-x: hidden;
+}
+
+.item-cloner {
+	display: inline-block;
 }
 
 
