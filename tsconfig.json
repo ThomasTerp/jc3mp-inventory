@@ -2,14 +2,11 @@
 	"compilerOptions": {
 		"alwaysStrict": true,
 		"target": "es6",
-		"module": "commonjs",
 		"removeComments": true,
 		"types": [
-			"types-jcmp"
+			"types-jcmp",
+			"@types/redis"
 		]
 	},
-	"compileOnSave": false,
-	"include": [
-		"ts"
-	]
+	"compileOnSave": false
 }

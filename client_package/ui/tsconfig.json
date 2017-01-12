@@ -2,7 +2,6 @@
 	"compilerOptions": {
 		"alwaysStrict": true,
 		"target": "es6",
-		"module": "commonjs",
 		"removeComments": true,
 		"types": [
 			"types-jcmp",
@@ -12,6 +11,6 @@
 	},
 	"compileOnSave": false,
 	"include": [
-		"ts"
+		"src"
 	]
 }

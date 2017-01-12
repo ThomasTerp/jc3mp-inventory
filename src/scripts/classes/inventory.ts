@@ -1,17 +1,35 @@
 "use strict";
 import {InventorySlot} from "./inventorySlot";
 
+
 class Inventory
 {
-	size: Vector2;
+	uniqueName: string;
 	items: any[];
 	slots: InventorySlot[][];
+	size: Vector2;
 	
 	constructor(size: Vector2)
 	{
-		this.size = size;
+		this.uniqueName = null;
 		this.items = [];
+		this.size = size;
 		this.slots = [];
+		
+		this.createSlots();
+	}
+	
+	createSlots()
+	{
+		for(let y = 0; y < this.size.y; y++)
+		{
+			this.slots[y] = [];
+			
+			for(let x = 0; x < this.size.x; x++)
+			{
+				this.slots[y][x] = new InventorySlot(this, new Vector2(x, y));
+			}
+		}
 	}
 	
 	getSlot(position: Vector2): InventorySlot

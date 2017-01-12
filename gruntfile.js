@@ -1,84 +1,72 @@
-const path = require('path');
+const path = require("path");
 
 
 module.exports = function(grunt)
 {
 	grunt.initConfig({
-		webpack: {
+		ts: {
 			server: {
-				entry: './ts/main.ts',
-				output: {
-					filename: 'main.js'
+				src: [
+					"src/**/*.ts"
+				],
+				options: {
+					failOnTypeErrors: false,
+					sourceMap: false,
 				},
-				resolve: {
-					extensions: [
-						'',
-						'.webpack.js',
-						'.web.js',
-						'.ts',
-						'.tsx',
-						'.js'
-					]
-				},
-				module: {
-					loaders: [
-						{
-							test: /\.tsx?$/,
-							loader: 'ts-loader'
-						}
-					]
-				}
-			},
+				outDir: "./"
+			}
+		},
+		webpack: {
 			client: {
 				context: __dirname + "/client_package",
-				entry: './ts/main.ts',
+				entry: "./src/main.ts",
 				output: {
 					path: "client_package",
-					filename: 'main.js'
+					filename: "main.js"
 				},
 				resolve: {
 					root: __dirname + "/client_package",
 					extensions: [
-						'',
-						'.webpack.js',
-						'.web.js',
-						'.ts',
-						'.tsx',
-						'.js'
+						"",
+						".webpack.js",
+						".web.js",
+						".ts",
+						".tsx",
+						".js"
 					]
 				},
 				module: {
 					loaders: [
 						{
 							test: /\.tsx?$/,
-							loader: 'ts-loader'
+							loader: "ts-loader"
 						}
 					]
 				}
 			},
 			ui: {
 				context: __dirname + "/client_package/ui",
-				entry: './ts/main.ts',
+				entry: "./src/main.ts",
 				output: {
-					path: "client_package/ui/js",
-					filename: 'index.js'
+					path: "client_package/ui/scripts",
+					filename: "index.js"
 				},
 				resolve: {
 					root: __dirname + "/client_package/ui",
 					extensions: [
-						'',
-						'.webpack.js',
-						'.web.js',
-						'.ts',
-						'.tsx',
-						'.js'
+						"",
+						".webpack.js",
+						".web.js",
+						".ts",
+						".tsx",
+						".js"
 					]
 				},
 				module: {
 					loaders: [
 						{
 							test: /\.tsx?$/,
-							loader: 'ts-loader'
+							loader: "ts-loader"
 						}
 					]
 				}
@@ -86,15 +74,16 @@ module.exports = function(grunt)
 		}
 	});
 	
-	grunt.loadNpmTasks('grunt-webpack');
+	grunt.loadNpmTasks("grunt-ts");
+	grunt.loadNpmTasks("grunt-webpack");
 	
 	grunt.registerTask("default", [
-		"webpack:server",
+		"ts:server",
 		"webpack:client",
 		"webpack:ui"
 	]);
 	grunt.registerTask("server", [
-		"webpack:server"
+		"ts:server"
 	]);
 	grunt.registerTask("client", [
 		"webpack:client"
