@@ -42,19 +42,23 @@ var Inventory = (function () {
         }
     };
     Inventory.prototype.addItem = function (item, position) {
-        this.items[item.id] = item;
-        item.createHTML();
-        item.inventoryWindow = this;
-        item.inventoryPosition = position;
-        item.state = "inventory";
-        this.setSlotsItem(item);
+        if (!this.hasItem(item)) {
+            this.items.push(item);
+            item.inventory = this;
+            item.inventoryPosition = position;
+            this.setSlotsItem(item);
+        }
     };
     Inventory.prototype.removeItem = function (item) {
-        this.unsetSlotsItem(item);
-        item.inventoryWindow = null;
-        item.inventoryPosition = null;
-        item.state = "invalid";
-        delete this.items[item.id];
+        if (this.hasItem(item)) {
+            this.unsetSlotsItem(item);
+            item.inventory = null;
+            item.inventoryPosition = null;
+            this.items.splice(this.items.indexOf(item), 1);
+        }
+    };
+    Inventory.prototype.hasItem = function (item) {
+        return this.items.indexOf(item) === -1 ? false : true;
     };
     Inventory.prototype.isItemWithinInventory = function (item, position) {
         var itemSize = item.getSize();

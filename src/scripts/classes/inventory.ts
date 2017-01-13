@@ -1,11 +1,12 @@
 "use strict";
+import {Item} from "./items";
 import {InventorySlot} from "./inventorySlot";
 
 
 class Inventory
 {
 	uniqueName: string;
-	items: any[];
+	items: Item[];
 	slots: InventorySlot[][];
 	size: Vector2;
 	
@@ -37,7 +38,7 @@ class Inventory
 		return this.slots[position.y][position.x];
 	}
 	
-	setSlotsItem(item: any): void
+	setSlotsItem(item: Item): void
 	{
 		for(let y = 0; y < item.slots.length; y++)
 		{
@@ -54,7 +55,7 @@ class Inventory
 		}
 	}
 	
-	unsetSlotsItem(item: any): void
+	unsetSlotsItem(item: Item): void
 	{
 		for(let y = 0; y < item.slots.length; y++)
 		{
@@ -71,38 +72,45 @@ class Inventory
 		}
 	}
 	
-	addItem(item: any, position: Vector2): void
+	addItem(item: Item, position: Vector2): void
 	{
-		this.items[item.id] = item;
-		
-		item.createHTML();
-		
-		item.inventoryWindow = this;
-		item.inventoryPosition = position;
-		item.state = "inventory";
-		
-		this.setSlotsItem(item);
+		if(!this.hasItem(item))
+		{
+			this.items.push(item);
+			
+			item.inventory = this;
+			item.inventoryPosition = position;
+			
+			this.setSlotsItem(item);
+		}
 	}
 	
-	removeItem(item: any): void
+	removeItem(item: Item): void
 	{
-		this.unsetSlotsItem(item);
-		
-		item.inventoryWindow = null;
-		item.inventoryPosition = null;
-		item.state = "invalid";
-		
-		delete this.items[item.id];
+		if(this.hasItem(item))
+		{
+			this.unsetSlotsItem(item);
+			
+			item.inventory = null;
+			item.inventoryPosition = null;
+			
+			this.items.splice(this.items.indexOf(item), 1);
+		}
 	}
 	
-	isItemWithinInventory(item: any, position: Vector2): boolean
+	hasItem(item: Item): boolean
+	{
+		return this.items.indexOf(item) === -1 ? false : true;
+	}
+	
+	isItemWithinInventory(item: Item, position: Vector2): boolean
 	{
 		let itemSize = item.getSize();
 		
 		return position.x + itemSize.width <= this.size.x && position.y + itemSize.height <= this.size.y;
 	}
 	
-	canItemBePlaced(item: any, position: Vector2): boolean
+	canItemBePlaced(item: Item, position: Vector2): boolean
 	{
 		let itemSize = item.getSize();
 		
