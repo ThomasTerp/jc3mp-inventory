@@ -107,16 +107,16 @@ class Inventory
 	{
 		let itemSize = item.getSize();
 		
-		return position.x + itemSize.width <= this.size.x && position.y + itemSize.height <= this.size.y;
+		return position.x + itemSize.x <= this.size.x && position.y + itemSize.y <= this.size.y;
 	}
 	
 	canItemBePlaced(item: Item, position: Vector2): boolean
 	{
 		let itemSize = item.getSize();
 		
-		for(let y = 0; y < itemSize.height; y++)
+		for(let y = 0; y < itemSize.y; y++)
 		{
-			for(let x = 0; x < itemSize.width; x++)
+			for(let x = 0; x < itemSize.x; x++)
 			{
 				let isSolid = item.slots[y][x] == 1;
 				

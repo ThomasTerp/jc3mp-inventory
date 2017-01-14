@@ -2,25 +2,14 @@
 import "./item";
 import "./tooltip";
 import "./itemSelection";
+import "./events";
 import * as ItemManager from "./itemManager";
-import * as ItemTypeManager from "./windowManager";
+import * as ItemTypeManager from "./ItemTypeManager";
 import * as WindowManager from "./windowManager";
-import {InventoryWindow} from "./inventoryWindow"
-import {AdminWindow} from "./adminWindow"
+import {InventoryWindow, getLocalInventoryWindow} from "./inventoryWindow";
+import {AdminWindow} from "./adminWindow";
 import {Vector2} from "./vector2";
 
-
-//Local inventory
-let localInventoryWindow = new InventoryWindow("Inventory", new Vector2(20, 12));
-WindowManager.add("local", localInventoryWindow);
-
-//Loot crate 1
-let lootInventoryWindow = new InventoryWindow("Loot Crate", new Vector2(10, 10));
-WindowManager.add("loot1", lootInventoryWindow);
-
-//Loot crate 2
-let loot2InventoryWindow = new InventoryWindow("Loot Crate 2", new Vector2(10, 10));
-WindowManager.add("loot2", loot2InventoryWindow);
 
 //Admin window
 let adminWindow = new AdminWindow("Items");
@@ -52,7 +41,12 @@ $(document).on("keydown", (event) =>
 		{
 			//Key I
 			case 73:
-				localInventoryWindow.toggle();
+				const inventoryWindow = getLocalInventoryWindow();
+				
+				if(inventoryWindow !== null)
+				{
+					inventoryWindow.toggle();
+				}
 				
 				break;
 			

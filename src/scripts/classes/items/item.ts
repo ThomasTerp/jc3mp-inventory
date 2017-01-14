@@ -17,7 +17,7 @@ abstract class Item
 	category: string;
 	name: string;
 	
-	_defaultSlots: number[][]
+	private _defaultSlots: number[][]
 	set defaultSlots(value)
 	{
 		this._defaultSlots = value;
@@ -44,36 +44,30 @@ abstract class Item
 		];
 	}
 	
-	getDefaultSlotsClone()
+	getDefaultSlotsClone(): number[][]
 	{
 		return Util.cloneObject(this.defaultSlots);
 	}
 	
 	//Get size without rotations and flipping
-	getDefaultSize()
+	getDefaultSize(): Vector2
 	{
-		return {
-			width: this.defaultSlots[0].length,
-			height: this.defaultSlots.length
-		};
+		return new Vector2(this.defaultSlots[0].length, this.defaultSlots.length);
 	}
 	
 	//Get size with rotations and flipping
-	getSize()
+	getSize(): Vector2
 	{
-		return {
-			width: this.slots[0].length,
-			height: this.slots.length
-		};
+		return new Vector2(this.slots[0].length, this.slots.length);
 	}
 	
-	updateSlots()
+	updateSlots(): void
 	{
 		this.slots = this.getDefaultSlotsClone();
 		
 		if(this.isFlipped)
 		{
-			for(let y = 0; y < this.getDefaultSize().height; y++)
+			for(let y = 0; y < this.getDefaultSize().y; y++)
 			{
 				this.slots[y].reverse();
 			}
@@ -88,72 +82,7 @@ export {Item}
 /*
 //TODO: Put these other items in another file
 
-abstract class FoodItem extends Item
-{
-	health: number;
-	hunger: number;
-	thirst: number;
-	
-	constructor(id: number)
-	{
-		super(id);
-		
-		this.health = 0;
-		this.hunger = 0;
-		this.thirst = 0;
-		
-		this.category = "Food";
-		this.updateDescription();
-	}
-	
-	updateDescription()
-	{
-		let description = ``;
-		
-		if(this.health !== 0)
-		{
-			description += `Restore ` + Labels.health() + ` by ` + Labels.percentage(this.health);
-		}
-		
-		if(this.hunger !== 0)
-		{
-			description += (this.hunger > 0 ? `Decrease` : `Increase`) + ` ` + Labels.hunger() + ` by ` + Labels.percentage(this.hunger) + `<br />`;
-		}
-		
-		if(this.thirst !== 0)
-		{
-			description += (this.thirst > 0 ? `Decrease` : `Increase`) + ` ` + Labels.thirst() + ` by ` + Labels.percentage(this.thirst) + `<br />`;
-		}
-		
-		this.description = description;
-	}
-}
-export {FoodItem}
 
-class AppleItem extends FoodItem
-{
-	constructor(id: number)
-	{
-		super(id);
-		
-		this.hunger = 30;
-		this.thirst = 20;
-		
-		this.name = "Apple";
-		this.updateDescription();
-		this.src = "images/apple.png";
-		this.defaultSlots = [
-			[1],
-		];
-	}
-}
-export {AppleItem}
-ItemTypeManager.add(AppleItem, [
-	() =>
-	{
-		return new AppleItem(-1);
-	}
-]);
 
 class RavelloBeansItem extends FoodItem
 {
@@ -310,28 +239,7 @@ ItemTypeManager.add(U39PlechovkaItem, [
 	}
 ]);
 */
-class GasCanItem extends Item
-{
-	constructor()
-	{
-		super();
-		
-		this.name = "Gas Can";
-		this.defaultSlots = [
-			[1, 1],
-			[1, 1],
-			[1, 1],
-			[1, 1],
-		];
-	}
-}
-export {GasCanItem}
-ItemTypeManager.add(GasCanItem.name, [
-	() =>
-	{
-		return new GasCanItem();
-	}
-]);
+
 /*
 class BackpackItem extends Item
 {

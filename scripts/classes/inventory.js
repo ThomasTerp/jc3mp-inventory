@@ -62,12 +62,12 @@ var Inventory = (function () {
     };
     Inventory.prototype.isItemWithinInventory = function (item, position) {
         var itemSize = item.getSize();
-        return position.x + itemSize.width <= this.size.x && position.y + itemSize.height <= this.size.y;
+        return position.x + itemSize.x <= this.size.x && position.y + itemSize.y <= this.size.y;
     };
     Inventory.prototype.canItemBePlaced = function (item, position) {
         var itemSize = item.getSize();
-        for (var y = 0; y < itemSize.height; y++) {
-            for (var x = 0; x < itemSize.width; x++) {
+        for (var y = 0; y < itemSize.y; y++) {
+            for (var x = 0; x < itemSize.x; x++) {
                 var isSolid = item.slots[y][x] == 1;
                 if (isSolid) {
                     var slot = this.getSlot(new Vector2(position.x + x, position.y + y));

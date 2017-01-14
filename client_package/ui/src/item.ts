@@ -387,7 +387,7 @@ class AppleItem extends FoodItem
 	}
 }
 export {AppleItem}
-ItemTypeManager.add(AppleItem, [
+ItemTypeManager.add(AppleItem.name, [
 	() =>
 	{
 		return new AppleItem(-1);
@@ -412,7 +412,7 @@ class RavelloBeansItem extends FoodItem
 	}
 }
 export {RavelloBeansItem}
-ItemTypeManager.add(RavelloBeansItem, [
+ItemTypeManager.add(RavelloBeansItem.name, [
 	() =>
 	{
 		return new RavelloBeansItem(-1);
@@ -441,7 +441,7 @@ class LaisChipsItem extends FoodItem
 	}
 }
 export {LaisChipsItem}
-ItemTypeManager.add(LaisChipsItem, [
+ItemTypeManager.add(LaisChipsItem.name, [
 	() =>
 	{
 		return new LaisChipsItem(-1);
@@ -465,7 +465,7 @@ class SnikersItem extends FoodItem
 	}
 }
 export {SnikersItem}
-ItemTypeManager.add(SnikersItem, [
+ItemTypeManager.add(SnikersItem.name, [
 	() =>
 	{
 		return new SnikersItem(-1);
@@ -491,7 +491,7 @@ class WaterBottleItem extends FoodItem
 	}
 }
 export {WaterBottleItem}
-ItemTypeManager.add(WaterBottleItem, [
+ItemTypeManager.add(WaterBottleItem.name, [
 	() =>
 	{
 		return new WaterBottleItem(-1);
@@ -519,7 +519,7 @@ class MilkGallonItem extends FoodItem
 	}
 }
 export {MilkGallonItem}
-ItemTypeManager.add(MilkGallonItem, [
+ItemTypeManager.add(MilkGallonItem.name, [
 	() =>
 	{
 		return new MilkGallonItem(-1);
@@ -542,7 +542,7 @@ class U39PlechovkaItem extends Item
 	}
 }
 export {U39PlechovkaItem}
-ItemTypeManager.add(U39PlechovkaItem, [
+ItemTypeManager.add(U39PlechovkaItem.name, [
 	() =>
 	{
 		return new U39PlechovkaItem(-1);
@@ -566,7 +566,7 @@ class GasCanItem extends Item
 	}
 }
 export {GasCanItem}
-ItemTypeManager.add(GasCanItem, [
+ItemTypeManager.add(GasCanItem.name, [
 	() =>
 	{
 		return new GasCanItem(-1);
@@ -601,7 +601,7 @@ class BackpackItem extends Item
 	}
 }
 export {BackpackItem}
-ItemTypeManager.add(BackpackItem, [
+ItemTypeManager.add(BackpackItem.name, [
 	() =>
 	{
 		return new BackpackItem(-1);
@@ -653,7 +653,7 @@ class SmallWrenchItem extends VehicleRepairItem
 	}
 }
 export {SmallWrenchItem}
-ItemTypeManager.add(SmallWrenchItem, [
+ItemTypeManager.add(SmallWrenchItem.name, [
 	() =>
 	{
 		return new SmallWrenchItem(-1);
@@ -677,7 +677,7 @@ class BigWrenchItem extends VehicleRepairItem
 	}
 }
 export {BigWrenchItem}
-ItemTypeManager.add(BigWrenchItem, [
+ItemTypeManager.add(BigWrenchItem.name, [
 	() =>
 	{
 		return new BigWrenchItem(-1);
@@ -702,7 +702,7 @@ class ToolboxItem extends VehicleRepairItem
 	}
 }
 export {ToolboxItem}
-ItemTypeManager.add(ToolboxItem, [
+ItemTypeManager.add(ToolboxItem.name, [
 	() =>
 	{
 		return new ToolboxItem(-1);
@@ -725,7 +725,7 @@ class MapItem extends Item
 	}
 }
 export {MapItem}
-ItemTypeManager.add(MapItem, [
+ItemTypeManager.add(MapItem.name, [
 	() =>
 	{
 		return new MapItem(-1);
@@ -748,7 +748,7 @@ class GrapplingHookItem extends Item
 	}
 }
 export {GrapplingHookItem}
-ItemTypeManager.add(GrapplingHookItem, [
+ItemTypeManager.add(GrapplingHookItem.name, [
 	() =>
 	{
 		return new GrapplingHookItem(-1);
@@ -773,7 +773,7 @@ class BavariumWingsuitItem extends Item
 	}
 }
 export {BavariumWingsuitItem}
-ItemTypeManager.add(BavariumWingsuitItem, [
+ItemTypeManager.add(BavariumWingsuitItem.name, [
 	() =>
 	{
 		return new BavariumWingsuitItem(-1);
@@ -797,7 +797,7 @@ class PillsItem extends FoodItem
 	}
 }
 export {PillsItem}
-ItemTypeManager.add(PillsItem, [
+ItemTypeManager.add(PillsItem.name, [
 	() =>
 	{
 		return new PillsItem(-1);
@@ -822,7 +822,7 @@ class BandageItem extends FoodItem
 	}
 }
 export {BandageItem}
-ItemTypeManager.add(BandageItem, [
+ItemTypeManager.add(BandageItem.name, [
 	() =>
 	{
 		return new BandageItem(-1);
@@ -848,7 +848,7 @@ class FirstAidKitItem extends FoodItem
 	}
 }
 export {FirstAidKitItem}
-ItemTypeManager.add(FirstAidKitItem, [
+ItemTypeManager.add(FirstAidKitItem.name, [
 	() =>
 	{
 		return new FirstAidKitItem(-1);

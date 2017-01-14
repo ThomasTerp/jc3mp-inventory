@@ -1,44 +1,47 @@
 "use strict";
 import redis = require("redis");
 import {Inventory} from "./scripts/classes/inventory";
+import "./scripts/classes/items";
 import * as items from "./scripts/classes/items";
 import * as database from "./scripts/database";
+import * as network from "./scripts/network";
 import * as inventoryManager from "./scripts/managers/inventoryManager";
 import * as itemManager from "./scripts/managers/itemManager";
 
-/*const testInventory = new Inventory(new Vector2(20, 10));
-inventoryManager.add("testInventory", testInventory);
 
-const item1 = new items.GasCanItem();
-testInventory.addItem(item1, new Vector2(0, 0));
-
-database.saveItem(item1, () =>
-{
-	console.log(`Saved item${item1.id}`);
-});*/
-
-/*const testInventory = new Inventory(new Vector2(20, 10));
-inventoryManager.add("testInventory", testInventory)
-database.saveInventory(testInventory, () =>
-{
-	console.log("SAVED")
-});
-
-database.loadInventory("testInventory", true, (inventory) =>
-{
-	const item1 = new items.GasCanItem();
-	inventory.addItem(item1, new Vector2(0, 0));
+jcmp.events.Add("PlayerReady", (player) => {
+	const inventoryUniqueName = `player${player.client.steamId}`;
 	
-	database.saveInventory(inventory, () =>
+	database.loadInventory(inventoryUniqueName, true, (inventory) =>
 	{
-		database.loadInventory("testInventory", true, (inventory) =>
+		new Promise((resolve, reject) =>
 		{
-			console.log(inventory)
+			if(inventory === undefined)
+			{
+				player["inventory"] = new Inventory(new Vector2(10, 20));
+				player["inventory"].uniqueName = inventoryUniqueName;
+				
+				player["inventory"].addItem(new items.AppleItem(), new Vector2(0, 0));
+				player["inventory"].addItem(new items.GasCanItem(), new Vector2(1, 0));
+				player["inventory"].addItem(new items.GasCanItem(), new Vector2(4, 0));
+				
+				database.saveInventory(player["inventory"], true, () =>
+				{
+					resolve();
+				});
+			}
+			else
+			{
+				player["inventory"] = inventory;
+				
+				resolve();
+			}
+		}).then(() =>
+		{
+			network.sendInventory(player, player["inventory"], true);
+		}).catch((err) =>
+		{
+			console.log(err);
 		});
 	});
-});*/
-
-/*database.loadInventory("testInventory", false, (inventory) =>
-{
-	console.log(inventory);
-})*/
+});

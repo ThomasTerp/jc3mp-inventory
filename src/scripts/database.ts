@@ -1,3 +1,4 @@
+"use strict";
 import redis = require("redis");
 import {Item} from "./classes/items"
 import {Inventory} from "./classes/inventory"
@@ -55,7 +56,18 @@ export function saveInventory(inventory: Inventory, saveItems: boolean, callback
 			{
 				callback();
 			}
-		});
+		}).catch((err) =>
+		{
+			if(callback !== undefined)
+			{
+				callback();
+			}
+			
+			if(err !== undefined)
+			{
+				console.log(err)
+			}
+		});;
 	}
 }
 
@@ -99,7 +111,18 @@ export function saveInventoryItems(inventory: Inventory, callback?: () => void)
 			{
 				callback();
 			}
-		});
+		}).catch((err) =>
+		{
+			if(callback !== undefined)
+			{
+				callback();
+			}
+			
+			if(err !== undefined)
+			{
+				console.log(err)
+			}
+		});;
 	}
 }
 
@@ -132,7 +155,7 @@ export function loadInventory(uniqueName: string, loadItems: boolean, callback?:
 		{
 			return new Promise((resolve, reject) =>
 			{
-				loadInventoryItems(inventory, (items) =>
+				loadInventoryItems(inventory, () =>
 				{
 					resolve();
 				});
@@ -140,20 +163,25 @@ export function loadInventory(uniqueName: string, loadItems: boolean, callback?:
 		}
 	}).then(() =>
 	{
-		if(callback != undefined)
+		if(callback !== undefined)
 		{
 			callback(inventory);
 		}
-	}).catch((reason) =>
+	}).catch((err) =>
 	{
-		if(callback != undefined)
+		if(callback !== undefined)
 		{
 			callback();
+		}
+		
+		if(err !== undefined)
+		{
+			console.log(err)
 		}
 	});
 }
 
-export function loadInventoryItems(inventory, callback: (items: Item[]) => void)
+export function loadInventoryItems(inventory, callback: () => void)
 {
 	if(inventory.uniqueName == null)
 	{
@@ -162,7 +190,6 @@ export function loadInventoryItems(inventory, callback: (items: Item[]) => void)
 	else
 	{
 		const itemLoadPromises = [];
-		const items = [];
 		
 		new Promise((resolve, reject) =>
 		{
@@ -170,7 +197,7 @@ export function loadInventoryItems(inventory, callback: (items: Item[]) => void)
 			{
 				replies.forEach((reply, replyIndex) =>
 				{
-					const itemID = reply;
+					const itemID = parseFloat(reply);
 					
 					itemLoadPromises.push(new Promise((resolve, reject) =>
 					{
@@ -182,8 +209,6 @@ export function loadInventoryItems(inventory, callback: (items: Item[]) => void)
 							}
 							else
 							{
-								items.push(item);
-								
 								resolve();
 							}
 						});
@@ -197,11 +222,22 @@ export function loadInventoryItems(inventory, callback: (items: Item[]) => void)
 			return Promise.all(itemLoadPromises);
 		}).then(() =>
 		{
-			if(callback != undefined)
+			if(callback !== undefined)
 			{
-				callback(items);
+				callback();
 			}
-		});
+		}).catch((err) =>
+		{
+			if(callback !== undefined)
+			{
+				callback();
+			}
+			
+			if(err !== undefined)
+			{
+				console.log(err)
+			}
+		});;
 	}
 }
 
@@ -281,20 +317,31 @@ export function saveItem(item: Item, callback?: () => void)
 		{
 			callback();
 		}
-	});
+	}).catch((err) =>
+	{
+		if(callback !== undefined)
+		{
+			callback();
+		}
+		
+		if(err !== undefined)
+		{
+			console.log(err)
+		}
+	});;
 }
 
 //Get and construct an item from the database, inventory for the item has to be loaded or this function will return null.
 //Item gets added to the item manager once its loaded
 export function loadItem(id: number, callback?: (item?: Item) => void): void
 {
-	let item;
-	let type;
-	let rotation;
-	let isFlipped;
-	let inventory;
-	let inventoryUniqueName;
-	let inventoryPosition;
+	let item: Item;
+	let type: string;
+	let rotation: number;
+	let isFlipped: boolean;
+	let inventory: Inventory;
+	let inventoryUniqueName: string;
+	let inventoryPosition: Vector2;
 	
 	Promise.all([
 		new Promise((resolve, reject) =>
@@ -307,6 +354,11 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 					rotation = parseFloat(replies[1]);
 					isFlipped = replies[2] === "1" ? true : false;
 					inventoryUniqueName = replies[3];
+					
+					if(inventoryUniqueName !== undefined)
+					{
+						inventory = inventoryManager.get(inventoryUniqueName);
+					}
 					
 					resolve();
 				}
@@ -336,13 +388,12 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 	{
 		return new Promise((resolve, reject) =>
 		{
-			const constructor = itemTypeManager.get(type)[0];
+			const constructors = itemTypeManager.get(type);
+			const constructor = constructors !== undefined ? constructors[0] : undefined;
 			
 			if(constructor === undefined)
 			{
-				console.log(`[jc3mp-inventory] Redis database warning: Item type (${type}) does not have a constructor in the item type manager`);
-				
-				reject();
+				reject(`[jc3mp-inventory] Redis database error: Item type (${type}) does not have a constructor in the item type manager`);
 			}
 			else
 			{
@@ -362,15 +413,20 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 		});
 	}).then(() =>
 	{
-		if(callback != undefined)
+		if(callback !== undefined)
 		{
 			callback(item);
 		}
-	}).catch((reason) =>
+	}).catch((err) =>
 	{
-		if(callback != undefined)
+		if(callback !== undefined)
 		{
 			callback();
+		}
+		
+		if(err !== undefined)
+		{
+			console.log(err)
 		}
 	});
 }

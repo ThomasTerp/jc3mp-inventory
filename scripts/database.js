@@ -34,7 +34,15 @@ function saveInventory(inventory, saveItems, callback) {
             if (callback !== undefined) {
                 callback();
             }
+        }).catch(function (err) {
+            if (callback !== undefined) {
+                callback();
+            }
+            if (err !== undefined) {
+                console.log(err);
+            }
         });
+        ;
     }
 }
 exports.saveInventory = saveInventory;
@@ -63,7 +71,15 @@ function saveInventoryItems(inventory, callback) {
             if (callback !== undefined) {
                 callback();
             }
+        }).catch(function (err) {
+            if (callback !== undefined) {
+                callback();
+            }
+            if (err !== undefined) {
+                console.log(err);
+            }
         });
+        ;
     }
 }
 exports.saveInventoryItems = saveInventoryItems;
@@ -85,18 +101,21 @@ function loadInventory(uniqueName, loadItems, callback) {
         inventoryManager.add(uniqueName, inventory);
         if (loadItems) {
             return new Promise(function (resolve, reject) {
-                loadInventoryItems(inventory, function (items) {
+                loadInventoryItems(inventory, function () {
                     resolve();
                 });
             });
         }
     }).then(function () {
-        if (callback != undefined) {
+        if (callback !== undefined) {
             callback(inventory);
         }
-    }).catch(function (reason) {
-        if (callback != undefined) {
+    }).catch(function (err) {
+        if (callback !== undefined) {
             callback();
+        }
+        if (err !== undefined) {
+            console.log(err);
         }
     });
 }
@@ -107,18 +126,16 @@ function loadInventoryItems(inventory, callback) {
     }
     else {
         var itemLoadPromises_1 = [];
-        var items_1 = [];
         new Promise(function (resolve, reject) {
             exports.client.smembers("inventory:" + inventory.uniqueName + ":items", function (err, replies) {
                 replies.forEach(function (reply, replyIndex) {
-                    var itemID = reply;
+                    var itemID = parseFloat(reply);
                     itemLoadPromises_1.push(new Promise(function (resolve, reject) {
                         loadItem(itemID, function (item) {
                             if (item === undefined) {
                                 console.log("[jc3mp-inventory] Redis database warning: Tried to load item (" + itemID + ") from inventory (" + inventory.uniqueName + "), but the item does not exist in the database");
                             }
                             else {
-                                items_1.push(item);
                                 resolve();
                             }
                         });
@@ -129,10 +146,18 @@ function loadInventoryItems(inventory, callback) {
         }).then(function () {
             return Promise.all(itemLoadPromises_1);
         }).then(function () {
-            if (callback != undefined) {
-                callback(items_1);
+            if (callback !== undefined) {
+                callback();
+            }
+        }).catch(function (err) {
+            if (callback !== undefined) {
+                callback();
+            }
+            if (err !== undefined) {
+                console.log(err);
             }
         });
+        ;
     }
 }
 exports.loadInventoryItems = loadInventoryItems;
@@ -173,7 +198,15 @@ function saveItem(item, callback) {
         if (callback !== undefined) {
             callback();
         }
+    }).catch(function (err) {
+        if (callback !== undefined) {
+            callback();
+        }
+        if (err !== undefined) {
+            console.log(err);
+        }
     });
+    ;
 }
 exports.saveItem = saveItem;
 function loadItem(id, callback) {
@@ -192,6 +225,9 @@ function loadItem(id, callback) {
                     rotation = parseFloat(replies[1]);
                     isFlipped = replies[2] === "1" ? true : false;
                     inventoryUniqueName = replies[3];
+                    if (inventoryUniqueName !== undefined) {
+                        inventory = inventoryManager.get(inventoryUniqueName);
+                    }
                     resolve();
                 }
                 else {
@@ -212,10 +248,10 @@ function loadItem(id, callback) {
         })
     ]).then(function () {
         return new Promise(function (resolve, reject) {
-            var constructor = itemTypeManager.get(type)[0];
+            var constructors = itemTypeManager.get(type);
+            var constructor = constructors !== undefined ? constructors[0] : undefined;
             if (constructor === undefined) {
-                console.log("[jc3mp-inventory] Redis database warning: Item type (" + type + ") does not have a constructor in the item type manager");
-                reject();
+                reject("[jc3mp-inventory] Redis database error: Item type (" + type + ") does not have a constructor in the item type manager");
             }
             else {
                 item = constructor();
@@ -229,12 +265,15 @@ function loadItem(id, callback) {
             }
         });
     }).then(function () {
-        if (callback != undefined) {
+        if (callback !== undefined) {
             callback(item);
         }
-    }).catch(function (reason) {
-        if (callback != undefined) {
+    }).catch(function (err) {
+        if (callback !== undefined) {
             callback();
+        }
+        if (err !== undefined) {
+            console.log(err);
         }
     });
 }

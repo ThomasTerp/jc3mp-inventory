@@ -2,7 +2,7 @@
 import {Item} from "./item";
 
 
-const itemTypeConstructorsMap: Map<typeof Item, ItemConstructorFunction[]> = new Map();
+const itemTypeConstructorsMap: Map<string, ItemConstructorFunction[]> = new Map();
 
 interface ItemConstructorFunction
 {
@@ -12,13 +12,13 @@ export {ItemConstructorFunction}
 
 interface ForEachCallbackFunction
 {
-	(itemType: typeof Item, constructor: ItemConstructorFunction[]): any
+	(itemType: string, constructor: ItemConstructorFunction[]): any
 }
 export {ForEachCallbackFunction}
 
 //Add constructors array for an item type, each constructor should return a new item
 //item: Item constructor()
-export function add(itemType: typeof Item, constructors: ItemConstructorFunction[]): ItemConstructorFunction[]
+export function add(itemType: string, constructors: ItemConstructorFunction[]): ItemConstructorFunction[]
 {
     remove(itemType);
 	
@@ -28,7 +28,7 @@ export function add(itemType: typeof Item, constructors: ItemConstructorFunction
 }
 
 //Delete the constructors array for an item type
-export function remove(itemType: typeof Item): void
+export function remove(itemType: string): void
 {
     let constructors = get(itemType);
 	
@@ -39,13 +39,13 @@ export function remove(itemType: typeof Item): void
 }
 
 //Get the constructors array for an item type
-export function get(itemType: typeof Item): ItemConstructorFunction[]
+export function get(itemType: string): ItemConstructorFunction[]
 {
     return itemTypeConstructorsMap.get(itemType)
 }
 
 //Loop through all item types
-//callback(itemType: typeof Item, constructors: ItemConstructorFunction[]): boolean
+//callback(itemType: string, constructors: ItemConstructorFunction[]): boolean
 export function forEach(callback: ForEachCallbackFunction): void
 {
     for(let [itemType, constructors] of itemTypeConstructorsMap.entries())

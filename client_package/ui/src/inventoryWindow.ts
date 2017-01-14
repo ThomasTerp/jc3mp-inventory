@@ -156,34 +156,45 @@ class InventoryWindow extends Window
 	
 	addItem(item: Item, position: Vector2): void
 	{
-		this.items[item.id] = item;
-		
-		item.createHTML();
-		
-		item.inventoryWindow = this;
-		item.inventoryPosition = position;
-		item.state = "inventory";
-		
-		this.updateItemHTMLPosition(item);
-		
-		item.html.css("pointer-events", "none");
-		
-		this.html.find(".items").append(item.html);
-		
-		this.setSlotsItem(item);
+		if(!this.hasItem(item))
+		{
+			this.items[item.id] = item;
+			
+			item.createHTML();
+			
+			item.inventoryWindow = this;
+			item.inventoryPosition = position;
+			item.state = "inventory";
+			
+			this.updateItemHTMLPosition(item);
+			
+			item.html.css("pointer-events", "none");
+			
+			this.html.find(".items").append(item.html);
+			
+			this.setSlotsItem(item);
+		}
 	}
 	
 	removeItem(item: Item): void
 	{
-		this.unsetSlotsItem(item);
-		
-		item.inventoryWindow = undefined;
-		item.inventoryPosition = undefined;
-		item.state = "invalid";
-		
-		item.html.detach().appendTo("body > .items");
-		
-		delete this.items[item.id];
+		if(this.hasItem(item))
+		{
+			this.unsetSlotsItem(item);
+			
+			item.inventoryWindow = undefined;
+			item.inventoryPosition = undefined;
+			item.state = "invalid";
+			
+			item.html.detach().appendTo("body > .items");
+			
+			delete this.items[item.id];
+		}
+	}
+	
+	hasItem(item: Item): boolean
+	{
+		return this.items.indexOf(item) === -1 ? false : true;
 	}
 	
 	isItemWithinInventory(item: Item, position: Vector2): boolean
@@ -226,3 +237,16 @@ class InventoryWindow extends Window
 	}
 }
 export {InventoryWindow};
+
+
+let localInventoryWindow = null;
+
+export function setLocalInventoryWindow(inventoryWindow: InventoryWindow): void
+{
+	localInventoryWindow = inventoryWindow;
+}
+
+export function getLocalInventoryWindow(): InventoryWindow
+{
+	return localInventoryWindow
+}
