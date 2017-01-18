@@ -282,7 +282,7 @@ export function saveItem(item: Item, callback?: () => void)
 				{
 					client.hmset(`item:${item.id}:inventoryPosition`,
 						"x", item.inventoryPosition.x,
-						"y", item.inventoryPosition.x,
+						"y", item.inventoryPosition.y,
 						(err, reply) => {
 							resolve();
 						}
@@ -400,6 +400,8 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 				item = constructor();
 				item.rotation = rotation;
 				item.isFlipped = isFlipped;
+				
+				item.updateSlots();
 				
 				itemManager.add(id, item);
 				

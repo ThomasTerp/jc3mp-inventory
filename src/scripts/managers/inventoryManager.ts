@@ -8,9 +8,9 @@ const inventoriesMap: Map<string, Inventory> = new Map();
 //Add a window and give it a unique name
 export function add(uniqueName: string, inventory: Inventory): Inventory
 {
-	inventory.uniqueName = uniqueName;
+	remove(uniqueName);
     
-    remove(uniqueName);
+	inventory.uniqueName = uniqueName;
 	
     inventoriesMap.set(uniqueName, inventory);
 	

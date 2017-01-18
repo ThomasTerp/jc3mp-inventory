@@ -180,7 +180,7 @@ function saveItem(item, callback) {
                     resolve();
                 });
             }), new Promise(function (resolve, reject) {
-                exports.client.hmset("item:" + item.id + ":inventoryPosition", "x", item.inventoryPosition.x, "y", item.inventoryPosition.x, function (err, reply) {
+                exports.client.hmset("item:" + item.id + ":inventoryPosition", "x", item.inventoryPosition.x, "y", item.inventoryPosition.y, function (err, reply) {
                     resolve();
                 });
             }));
@@ -257,6 +257,7 @@ function loadItem(id, callback) {
                 item = constructor();
                 item.rotation = rotation;
                 item.isFlipped = isFlipped;
+                item.updateSlots();
                 itemManager.add(id, item);
                 if (inventory !== undefined && inventoryPosition !== undefined) {
                     inventory.addItem(item, inventoryPosition);

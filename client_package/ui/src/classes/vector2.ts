@@ -1,7 +1,7 @@
 "use strict";
 
 
-class Coord
+export class Vector2
 {
 	x: number;
 	y: number;
@@ -12,4 +12,3 @@ class Coord
 		this.y = y;
 	}
 }
-export {Coord as Vector2};

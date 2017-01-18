@@ -1,11 +1,10 @@
 "use strict";
-import * as ItemManager from "./itemManager";
-import * as WindowManager from "./windowManager";
-import * as Util from "./util";
-import {Item} from "./item";
-import {InventorySlot} from "./inventorySlot";
-import {InventoryWindow} from "./inventoryWindow";
-import {Vector2} from "./vector2";
+import {Item} from "./classes/items";
+import {InventoryWindow, InventorySlot} from "./classes/windows/inventoryWindow";
+import {Vector2Grid} from "./classes/vector2Grid";
+import * as itemManager from "./managers/itemManager";
+import * as windowManager from "./managers/windowManager";
+import * as util from "./util";
 
 
 //TODO: Do this in a better way
@@ -23,7 +22,7 @@ $("body").on("mousedown", (event) =>
 	
 	removeHTML();
 	
-	if(!Util.isCtrlPressed())
+	if(!util.isCtrlPressed())
 	{
 		//Selections can't be started on an item if ctrl is pressed
 		
@@ -51,7 +50,7 @@ $("body").on("mousedown", (event) =>
 	
 	let isAnyInventoryWindowOpen = false;
 	
-	WindowManager.forEach((uniqueName, window) =>
+	windowManager.forEach((uniqueName, window) =>
 	{
 		if(window.isVisible && window instanceof InventoryWindow)
 		{
@@ -69,7 +68,7 @@ $("body").on("mousedown", (event) =>
 	
 	if(shouldCreateItemSelection)
 	{
-		if(!Util.isCtrlPressed())
+		if(!util.isCtrlPressed())
 		{
 			clearSelection();
 		}
@@ -123,7 +122,7 @@ export function update(): void
 {
 	if(selectionHTML)
 	{
-		let cursorPosition = Util.getCursorPosition();
+		let cursorPosition = util.getCursorPosition();
 		
 		//Update selection size
 		selectionHTML.css({
@@ -133,7 +132,7 @@ export function update(): void
 			"width": Math.abs(cursorPosition.x - selectionPosition.x)
 		});
 		
-		ItemManager.forEach((id, item) =>
+		itemManager.forEach((itemIndex, item) =>
 		{
 			let isSelected = false;
 			
@@ -143,15 +142,15 @@ export function update(): void
 				
 				//Check if any inventory slot from the item is inside the selection
 				checkForSlotsInSelection:
-				for(let y = 0; y < itemSize.height; y++)
+				for(let rows = 0; rows < itemSize.rows; rows++)
 				{
-					for(let x = 0; x < itemSize.width; x++)
+					for(let cols = 0; cols < itemSize.cols; cols++)
 					{
-						let isSolid = item.slots[y][x] == 1;
+						let isSolid = item.slots[rows][cols] == 1;
 						
 						if(isSolid)
 						{
-							let slot = item.inventoryWindow.getSlot(new Vector2(item.inventoryPosition.x + x, item.inventoryPosition.y + y));
+							let slot = item.inventoryWindow.getSlot(new Vector2Grid(item.inventoryPosition.cols + cols, item.inventoryPosition.rows + rows));
 							
 							if(isHTMLInsideSelection(slot.html))
 							{

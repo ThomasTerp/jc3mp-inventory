@@ -1,12 +1,14 @@
 "use strict";
-import * as ItemSelection from "./itemSelection";
-import * as Util from "./util";
-import {Item} from "./item";
-import {ItemDrag} from "./itemDrag";
-import {Vector2} from "./vector2";
+import {Item} from "./../classes/items";
+import {ItemDrag} from "./../classes/itemDrag";
+import {Vector2} from "./../classes/vector2";
+import {addNetworkChange} from "./../classes/windows/inventoryWindow";
+import * as itemSelection from "./../itemSelection";
+import * as util from "./../util";
 
 
 const itemsHTML = $("body > .items");
+const items: Array<Item> = [];
 const itemsMap: Map<number, Item> = new Map();
 
 
@@ -16,7 +18,7 @@ $(document.body).on("mousemove", (event) =>
 	
 	ItemDrag.forEachInItemManager((itemDrag) =>
 	{
-		if(Util.isCtrlPressed() && !itemDrag.hasMoved)
+		if(util.isCtrlPressed() && !itemDrag.hasMoved)
 		{
 			delete itemDrag.item.itemDrag;
 			
@@ -35,10 +37,10 @@ $(document.body).on("mouseup", (event) =>
 		if(itemDrag.hasMoved)
 		{
 			itemDrag.update();
-			
 			ItemDrag.undoSlotModifications();
 			
-			let slot = itemDrag.getSlot(itemDrag.getPosition());
+			const slot = itemDrag.getSlot(itemDrag.getPosition());
+			const itemIndex = getItemIndex(itemDrag.item);
 			let isDroppedOutside = false;
 			
 			if(slot)
@@ -53,15 +55,20 @@ $(document.body).on("mouseup", (event) =>
 				isDroppedOutside = true;
 			}
 			
+			
 			if(isDroppedOutside)
 			{
 				itemDrag.item.html.css({
 					"pointer-events": "auto",
 				});
+				
+				addNetworkChange(itemIndex, "drop");
 			}
 			else
 			{
 				slot.inventoryWindow.addItem(itemDrag.item, slot.position);
+				
+				addNetworkChange(itemIndex, "move");
 			}
 			
 			itemDrag.item.state = "selected";
@@ -76,7 +83,7 @@ $(document.body).on("mousedown", ".item", (event) =>
 {
 	let item: Item = $(event.currentTarget).data("item");
 	
-	if(item && get(item.id) && !Util.isCtrlPressed())
+	if(item && exists(item) && !util.isCtrlPressed())
 	{
         startDragging(item, new Vector2(event.pageX, event.pageY));
 		
@@ -136,19 +143,19 @@ $(window).on("resize", (event) =>
 });
 
 
-//Start dragging selected items, this should be called inside a mousedown event
+/** Start dragging selected items, this should be called inside a mousedown event */
 export function startDragging(item: Item, position: Vector2): void
 {
     if(!item.isSelected)
     {
         //Selection is canceled if item is not part of the selection, and the item becomes the only selected item
         
-        ItemSelection.clearSelection();
-        ItemSelection.setSelectedHTML(item, true);
-        ItemSelection.selectedItems.set(item, true);
+        itemSelection.clearSelection();
+        itemSelection.setSelectedHTML(item, true);
+        itemSelection.selectedItems.set(item, true);
     }
     
-    ItemSelection.selectedItems.forEach((isSelected, item) =>
+    itemSelection.selectedItems.forEach((isSelected, item) =>
     {
         if(isSelected)
         {
@@ -159,45 +166,78 @@ export function startDragging(item: Item, position: Vector2): void
     });
 }
 
-export function add(id: number, item: Item): Item
+export function add(item: Item): Item
 {
-	item.id = id;
+    remove(item);
 	
-    remove(id);
+	if(item.id !== null)
+	{
+	    itemsMap.set(item.id, item);
+	}
 	
-    itemsMap.set(id, item);
+    items.push(item);
 	
     item.html.appendTo(itemsHTML);
 	
     return item;
 }
 
-export function remove(id: number): void
+export function remove(item: Item): void
 {
-    let item = get(id);
-	
-    if(item)
+    if(exists(item))
 	{
         item.html.detach();
 		
-        itemsMap.delete(id);
+		if(item.id !== null)
+		{
+	        itemsMap.delete(item.id);
+		}
+		
+		items.splice(items.indexOf(item), 1);
     }
 }
-	
-//Get a window by its unique name
-export function get(id: number): Item
+
+/** Get a item by its id */
+export function getByID(id: number): Item
 {
     return itemsMap.get(id)
 }
 
-//Loop through all items, return true to break
-export function forEach(callback: (id: number, item: Item) => any): void
+export function getByItemIndex(itemIndex: number)
 {
-    for(let [id, item] of itemsMap.entries())
+	return items[itemIndex];
+}
+
+export function getItemIndex(item: Item)
+{
+	return items.indexOf(item);
+}
+
+export function exists(item: Item): boolean
+{
+	if(getByID(item.id) !== undefined)
 	{
-        if(callback(id, item))
+		return true;
+	}
+	
+	if(items.indexOf(item) !== -1)
+	{
+		return true;
+	}
+	
+	return false;
+}
+
+/** Loop through all items, return true to break */
+export function forEach(callback: (itemIndex: number, item: Item) => any): void
+{
+	for(var itemIndex = 0; itemIndex < items.length; itemIndex++)
+	{
+		const item = items[itemIndex];
+		
+		if(callback(itemIndex, item))
 		{
             break;
         }
-    }
+	};
 }

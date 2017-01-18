@@ -1,9 +1,10 @@
 "use strict";
-import {Window} from "./window";
+import {Window} from "./../classes/windows/window";
 
 
 const windowsHTML = $(".windows");
 const windowsMap: Map<string, Window> = new Map();
+
 
 $(window).on("resize", (event) =>
 {
@@ -14,18 +15,12 @@ $(window).on("resize", (event) =>
 });
 
 
-interface ForEachCallbackFunction
-{
-	(uniqueName: string, window: Window): any
-}
-export {ForEachCallbackFunction}
-
-//Add a window and give it a unique name
+/** Add a window and give it a unique name */
 export function add(uniqueName: string, window: Window): Window
 {
-	window.uniqueName = uniqueName;
+	remove(uniqueName);
     
-    remove(uniqueName);
+	window.uniqueName = uniqueName;
 	
     windowsMap.set(uniqueName, window);
 	
@@ -34,12 +29,12 @@ export function add(uniqueName: string, window: Window): Window
     return window;
 }
 
-//Delete a window from the manager and detach its HTML
+/** Delete a window from the manager and detach its HTML */
 export function remove(uniqueName: string): void
 {
     let window = get(uniqueName);
 	
-    if(window)
+    if(window !== undefined)
 	{
         window.uniqueName = null;
         
@@ -49,14 +44,14 @@ export function remove(uniqueName: string): void
     }
 }
 
-//Get a window by its unique name
+/** Get a window by its unique name */
 export function get(uniqueName: string): Window
 {
     return windowsMap.get(uniqueName)
 }
 
-//Loop through all windows, return true to break
-export function forEach(callback: ForEachCallbackFunction): void
+/** Loop through all windows, return true to break */
+export function forEach(callback: (uniqueName: string, window: Window) => any): void
 {
     for(let [uniqueName, window] of windowsMap.entries())
 	{
@@ -67,7 +62,8 @@ export function forEach(callback: ForEachCallbackFunction): void
     }
 }
 
-export function isAnyWindowVisible()
+/** Returns true if any window is open */
+export function isAnyWindowVisible(): boolean
 {
 	let isAnyWindowVisible = false;
 	

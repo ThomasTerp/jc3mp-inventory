@@ -1,37 +1,26 @@
 "use strict";
-import "./item";
-import "./tooltip";
+import "./classes/items";
 import "./itemSelection";
+import "./tooltip";
 import "./events";
-import * as ItemManager from "./itemManager";
-import * as ItemTypeManager from "./ItemTypeManager";
-import * as WindowManager from "./windowManager";
-import {InventoryWindow, getLocalInventoryWindow} from "./inventoryWindow";
-import {AdminWindow} from "./adminWindow";
-import {Vector2} from "./vector2";
+import * as windowManager from "./managers/windowManager";
+import {getLocalInventoryWindow} from "./classes/windows/inventoryWindow";
+import {AdminWindow} from "./classes/windows/adminWindow";
 
 
 //Admin window
 let adminWindow = new AdminWindow("Items");
-WindowManager.add("adminWindow", adminWindow);
+windowManager.add("adminWindow", adminWindow);
 
 
 let chatIsOpen = false;
 
-jcmp.AddEvent('chat_input_state', function(state) {
-    chatIsOpen = state;
-});
-
-jcmp.AddEvent("jc3mp-inventory/ui/windowVisibilityChanged", (uniqueName, isVisible) => {
-	if(isVisible)
-	{
-		jcmp.ShowCursor();
-	}
-	else
-	{
-		jcmp.HideCursor();
-	}
-});
+if(typeof jcmp !== "undefined")
+{
+	jcmp.AddEvent('chat_input_state', function(state) {
+	    chatIsOpen = state;
+	});
+}
 
 $(document).on("keydown", (event) =>
 {

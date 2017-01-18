@@ -1,8 +1,8 @@
 "use strict";
 var inventoriesMap = new Map();
 function add(uniqueName, inventory) {
-    inventory.uniqueName = uniqueName;
     remove(uniqueName);
+    inventory.uniqueName = uniqueName;
     inventoriesMap.set(uniqueName, inventory);
     return inventory;
 }

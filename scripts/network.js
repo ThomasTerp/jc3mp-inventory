@@ -1,5 +1,7 @@
 "use strict";
 var inventoryManager = require("./managers/inventoryManager");
+var itemManager = require("./managers/itemManager");
+var database = require("./database");
 function sendInventory(player, inventory, isLocal) {
     if (isLocal === void 0) { isLocal = false; }
     if (inventory.uniqueName === null) {
@@ -16,8 +18,6 @@ function sendInventory(player, inventory, isLocal) {
         if (isLocal) {
             inventoryData.isLocal = true;
         }
-        console.log("SENDING INVENTORY");
-        console.log(inventoryData);
         jcmp.events.CallRemote("jc3mp-inventory/network/sendInventory", player, JSON.stringify(inventoryData));
     }
 }
@@ -42,8 +42,6 @@ function sendItems(player, items) {
             itemsData.push(itemData);
         }
     });
-    console.log("SENDING ITEMS");
-    console.log(itemsData);
     jcmp.events.CallRemote("jc3mp-inventory/network/sendItems", player, JSON.stringify(itemsData));
 }
 exports.sendItems = sendItems;
@@ -51,5 +49,44 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/requestInventoryItems", f
     var inventory = inventoryManager.get(inventoryUniqueName);
     if (inventory !== undefined) {
         sendItems(player, inventory.items);
+    }
+});
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", function (player, changesData) {
+    if (player.inventory === undefined) {
+        console.log("[jc3mp-inventory] Warning: Player \"" + player.client.name + "\" (" + player.client.steamId + " tried to make changes to their inventory, but they do not have an inventory");
+    }
+    else {
+        changesData = JSON.parse(changesData);
+        var resendInventory = false;
+        for (var changesDataIndex = 0; changesDataIndex < changesData.length; changesDataIndex++) {
+            var changeData = changesData[changesDataIndex];
+            switch (changeData.changeType) {
+                case "move":
+                    var item = itemManager.get(changeData.id);
+                    if (item === undefined) {
+                        console.log("[jc3mp-inventory] Warning: Player \"" + player.client.name + "\" (" + player.client.steamId + " tried to move a non existing item");
+                        resendInventory = true;
+                        break;
+                    }
+                    var newInventory = inventoryManager.get(changeData.inventoryUniqueName);
+                    if (newInventory !== undefined) {
+                        if (item.inventory !== null) {
+                            item.inventory.removeItem(item);
+                        }
+                        item.rotation = changeData.rotation;
+                        item.isFlipped = changeData.isFlipped;
+                        item.updateSlots();
+                        newInventory.addItem(item, new Vector2(changeData.inventoryPosition.x, changeData.inventoryPosition.y));
+                    }
+                    break;
+                case "drop":
+                    break;
+                case "create":
+                    break;
+                case "dropCreate":
+                    break;
+            }
+        }
+        database.saveInventory(player.inventory, true);
     }
 });

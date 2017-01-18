@@ -2,6 +2,7 @@
 import {Item} from "./classes/items"
 import {Inventory} from "./classes/inventory"
 import * as inventoryManager from "./managers/inventoryManager";
+import * as itemManager from "./managers/itemManager";
 import * as database from "./database";
 
 
@@ -25,8 +26,7 @@ export function sendInventory(player: Player, inventory: Inventory, isLocal: boo
 		{
 			inventoryData.isLocal = true;
 		}
-		console.log("SENDING INVENTORY")
-		console.log(inventoryData)
+		
 		jcmp.events.CallRemote("jc3mp-inventory/network/sendInventory", player, JSON.stringify(inventoryData));
 	}
 }
@@ -58,8 +58,7 @@ export function sendItems(player: Player, items: Item[]): void
 			itemsData.push(itemData);
 		}
 	});
-	console.log("SENDING ITEMS")
-	console.log(itemsData)
+	
 	jcmp.events.CallRemote("jc3mp-inventory/network/sendItems", player, JSON.stringify(itemsData));
 }
 
@@ -70,5 +69,70 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/requestInventoryItems", (
 	if(inventory !== undefined)
 	{
 		sendItems(player, inventory.items);
+	}
+});
+
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", (player, changesData) =>
+{
+	if(player.inventory === undefined)
+	{
+		console.log(`[jc3mp-inventory] Warning: Player "${player.client.name}" (${player.client.steamId} tried to make changes to their inventory, but they do not have an inventory`)
+	}
+	else
+	{
+		changesData = JSON.parse(changesData);
+		let resendInventory = false;
+		
+		for(let changesDataIndex = 0; changesDataIndex < changesData.length; changesDataIndex++)
+		{
+			const changeData = changesData[changesDataIndex];
+			
+			switch(changeData.changeType)
+			{
+				case "move":
+					const item = itemManager.get(changeData.id);
+					
+					if(item === undefined)
+					{
+						console.log(`[jc3mp-inventory] Warning: Player "${player.client.name}" (${player.client.steamId} tried to move a non existing item`)
+						resendInventory = true;
+						
+						break;
+					}
+					
+					const newInventory = inventoryManager.get(changeData.inventoryUniqueName);
+					
+					if(newInventory !== undefined)
+					{
+						if(item.inventory !== null)
+						{
+							item.inventory.removeItem(item);
+						}
+						
+						item.rotation = changeData.rotation;
+						item.isFlipped = changeData.isFlipped;
+						
+						item.updateSlots();
+						
+						newInventory.addItem(item, new Vector2(changeData.inventoryPosition.x, changeData.inventoryPosition.y));
+					}
+					
+					break;
+			
+				case "drop":
+					
+					break;
+				
+				case "create":
+					
+					break;
+			
+				case "dropCreate":
+					
+					break;
+			}
+		}
+		
+		database.saveInventory(player.inventory, true);
 	}
 });

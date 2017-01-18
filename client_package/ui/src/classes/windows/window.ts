@@ -1,8 +1,8 @@
 "use strict";
-import * as WindowManager from "./windowManager";
+import * as windowManager from "./../../managers/windowManager";
 
 
-//Class for a draggable window
+/** Class for a draggable window */
 abstract class Window
 {
 	html: JQuery;
@@ -37,7 +37,10 @@ abstract class Window
 			this.html.hide();
 		}
 		
-		jcmp.CallEvent("jc3mp-inventory/ui/windowVisibilityChanged", this.uniqueName, this.isVisible);
+		if(typeof jcmp !== "undefined")
+		{
+			jcmp.CallEvent("jc3mp-inventory/ui/windowVisibilityChanged", this.uniqueName, this.isVisible);
+		}
 	}
 	get isVisible(): boolean
 	{
@@ -55,6 +58,7 @@ abstract class Window
 		this.html.hide();
 	}
 	
+	/** Call this before deleting the object */
 	destroy(): void
 	{
 		this.html.remove();

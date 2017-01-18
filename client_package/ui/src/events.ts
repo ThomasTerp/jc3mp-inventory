@@ -1,66 +1,96 @@
 "use strict";
-import * as windowManager from "./windowManager";
-import * as itemManager from "./itemManager";
-import * as itemTypeManager from "./itemTypeManager";
-import {InventoryWindow, setLocalInventoryWindow} from "./inventoryWindow"
-import {Vector2} from "./vector2";
+import {Vector2Grid} from "./classes/vector2Grid";
+import {InventoryWindow, setLocalInventoryWindow, sendNetworkChanges} from "./classes/windows/inventoryWindow"
+import * as windowManager from "./managers/windowManager";
+import * as itemManager from "./managers/itemManager";
+import * as itemFactoryManager from "./managers/itemFactoryManager";
 
 
-jcmp.AddEvent("jc3mp-inventory/ui/sendInventory", (inventoryData) =>
+if(typeof jcmp !== "undefined")
 {
-	inventoryData = JSON.parse(inventoryData);
-	let inventoryWindow = windowManager.get(inventoryData.uniqueName) as InventoryWindow;
-	
-	if(inventoryWindow === undefined)
+	jcmp.AddEvent("jc3mp-inventory/ui/sendInventory", (inventoryData) =>
 	{
-		inventoryWindow = new InventoryWindow(inventoryData.uniqueName, new Vector2(inventoryData.size.x, inventoryData.size.y));
-		windowManager.add(inventoryData.uniqueName, inventoryWindow);
-	}
-	
-	if(inventoryData.isLocal)
-	{
-		setLocalInventoryWindow(inventoryWindow);
-	}
-});
-
-jcmp.AddEvent("jc3mp-inventory/ui/sendItems", (itemsData) =>
-{
-	itemsData = JSON.parse(itemsData);
-	
-	itemsData.forEach((itemData, itemDataIndex) =>
-	{
-		let item = itemManager.get(itemData.id);
+		inventoryData = JSON.parse(inventoryData);
+		let inventoryWindow = windowManager.get(inventoryData.uniqueName) as InventoryWindow;
 		
-		if(item === undefined)
+		if(inventoryWindow === undefined)
 		{
-			const constructors = itemTypeManager.get(itemData.type);
-			const constructor = constructors !== undefined ? constructors[0] : undefined;
-			
-			if(constructor === undefined)
-			{
-				console.log(`[jc3mp-inventory] Error: Item type (${itemData.type}) does not have a constructor in the item type manager`);
-			}
-			else
-			{
-				item = constructor();
-				item.rotation = itemData.rotation;
-				item.isFlipped = itemData.isFlipped;
-				
-				itemManager.add(item.id, item);
-				
-				if(itemData.inventoryUniqueName !== undefined)
-				{
-					const inventoryWindow = windowManager.get(itemData.inventoryUniqueName) as InventoryWindow;
-					
-					if(inventoryWindow !== undefined)
-					{
-						console.log(inventoryWindow)
-						
-						inventoryWindow.removeItem(item);
-						inventoryWindow.addItem(item, new Vector2(itemData.inventoryPosition.x, itemData.inventoryPosition.y))
-					}
-				}
-			}
+			inventoryWindow = new InventoryWindow(inventoryData.uniqueName, new Vector2Grid(inventoryData.size.cols, inventoryData.size.rows));
+			windowManager.add(inventoryData.uniqueName, inventoryWindow);
+		}
+		
+		if(inventoryData.isLocal)
+		{
+			setLocalInventoryWindow(inventoryWindow);
 		}
 	});
-});
+
+	jcmp.AddEvent("jc3mp-inventory/ui/sendItems", (itemsData) =>
+	{
+		itemsData = JSON.parse(itemsData);
+		
+		itemsData.forEach((itemData, itemDataIndex) =>
+		{
+			let item = itemManager.getByID(itemData.id);
+			
+			if(item === undefined)
+			{
+				const constructors = itemFactoryManager.get(itemData.type, "default");
+				const constructor = constructors !== undefined ? constructors[0] : undefined;
+				
+				if(constructor === undefined)
+				{
+					console.log(`[jc3mp-inventory] Error: Item type (${itemData.type}) does not have a default factory in the item factory manager`);
+				}
+				else
+				{
+					item = constructor();
+					item.id = itemData.id;
+					item.rotation = itemData.rotation;
+					item.isFlipped = itemData.isFlipped;
+					
+					item.updateSlots();
+					
+					itemManager.add(item);
+				}
+			}
+			
+			if(itemData.inventoryUniqueName !== undefined)
+			{
+				const inventoryWindow = windowManager.get(itemData.inventoryUniqueName) as InventoryWindow;
+				
+				if(inventoryWindow !== undefined)
+				{
+					if(item.inventoryWindow !== undefined)
+					{
+						item.inventoryWindow.removeItem(item);
+					}
+					
+					item.rotation = itemData.rotation;
+					item.isFlipped = itemData.isFlipped;
+					
+					item.updateSlots();
+					
+					inventoryWindow.addItem(item, new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows))
+				}
+			}
+		});
+	});
+
+	jcmp.AddEvent("jc3mp-inventory/ui/windowVisibilityChanged", (uniqueName, isVisible) => {
+		if(isVisible)
+		{
+			jcmp.ShowCursor();
+		}
+		else
+		{
+			jcmp.HideCursor();
+		}
+		
+		//Send inventory and item changes to server when all windows are closed
+		if(!windowManager.isAnyWindowVisible())
+		{
+			sendNetworkChanges();
+		}
+	});
+}

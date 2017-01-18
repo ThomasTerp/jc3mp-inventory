@@ -1,6 +1,6 @@
 "use strict";
-import {Item} from "./item";
-import {InventorySlot} from "./inventorySlot";
+import {Item} from "./classes/items";
+import {InventorySlot} from "./classes/windows/inventoryWindow";
 
 
 $(document).tooltip({

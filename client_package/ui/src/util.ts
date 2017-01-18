@@ -1,14 +1,14 @@
 "use strict";
-import {Vector2} from "./vector2";
+import {Vector2} from "./classes/vector2";
 
 
-//Modulo
+/** Modulo */
 export function mod(number: number, mod: number): number
 {
 	return ((number % mod) + mod) % mod;
 };
 
-//Rotate a 2D array
+/** Rotate a 2D array */
 export function rotateMatrix(matrix: any[][], direction: number): any[][]
 {
 	direction = mod(direction, 360) || 0;
@@ -126,7 +126,7 @@ $(window).on("mousemove", (event) =>
 	cursorPosition.y = event.pageY;
 });
 
-//Returns a position object for the cursor position
+/** Returns a Vector2 for the cursor position */
 export function getCursorPosition(): Vector2
 {
 	return cursorPosition;
@@ -155,7 +155,7 @@ $(window).on("keyup", (event) =>
 	}
 });
 
-//Returns true if CTRL is pressed
+/** Returns true if CTRL is pressed */
 export function isCtrlPressed(): boolean
 {
 	return isCtrlPressedBool;

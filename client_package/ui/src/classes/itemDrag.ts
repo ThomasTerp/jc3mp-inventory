@@ -1,19 +1,15 @@
 "use strict";
-import * as ItemManager from "./itemManager";
-import * as Util from "./util";
-import {InventorySlot} from "./inventorySlot";
-import {Item} from "./item";
+import {InventorySlot} from "./windows/inventoryWindow";
+import {Item} from "./items/item";
 import {Vector2} from "./vector2";
+import {Vector2Grid} from "./vector2Grid";
+import {addNetworkPreChange} from "./windows/inventoryWindow";
+import * as itemManager from "./../managers/itemManager";
+import * as util from "./../util";
 
 
-interface ForEachInItemManagerCallbackFunction
-{
-	(itemDrag: ItemDrag): any
-}
-export {ForEachInItemManagerCallbackFunction}
-
-//Class for dragging items
-class ItemDrag
+/** Class for dragging items */
+export class ItemDrag
 {
 	static slotModifications = new Map();
 	
@@ -27,11 +23,13 @@ class ItemDrag
 		ItemDrag.slotModifications.clear();
 	}
 	
-	//Calls a provided function once per item with itemDrag, in an item manager
-	//shouldBreak callback(itemDrag)
-	static forEachInItemManager(callback: ForEachInItemManagerCallbackFunction): void
+	/**
+	 * Calls a provided function once per item with itemDrag
+	 * Return true to break
+	 */
+	static forEachInItemManager(callback: (itemDrag: ItemDrag) => any): void
 	{
-		ItemManager.forEach((id, item) =>
+		itemManager.forEach((itemIndex, item) =>
 		{
 			if(item.itemDrag)
 			{
@@ -43,6 +41,7 @@ class ItemDrag
 		});
 	}
 	
+	/** Returns true if any item is currently being dragged */
 	static isAnyItemBeingDragged(): boolean
 	{
 		let isAnyItemBeingDragged = false;
@@ -73,7 +72,7 @@ class ItemDrag
 	
 	getPosition(): Vector2
 	{
-		let cursorPosition = Util.getCursorPosition();
+		let cursorPosition = util.getCursorPosition();
 		
 		return new Vector2(cursorPosition.x + this.offset.x, cursorPosition.y + this.offset.y);
 	}
@@ -81,7 +80,7 @@ class ItemDrag
 	getCursorOffset(): Vector2
 	{
 		let position = this.getPosition();
-		let cursorPosition = Util.getCursorPosition();
+		let cursorPosition = util.getCursorPosition();
 		
 		return new Vector2(cursorPosition.x - position.x, cursorPosition.y - position.y)
 	}
@@ -120,15 +119,15 @@ class ItemDrag
 		{
 			let itemSize = this.item.getSize();
 			
-			for(let y = 0; y < itemSize.height; y++)
+			for(let rows = 0; rows < itemSize.rows; rows++)
 			{
-				for(let x = 0; x < itemSize.width; x++)
+				for(let cols = 0; cols < itemSize.cols; cols++)
 				{
-					let isSolid = this.item.slots[y][x] == 1;
+					let isSolid = this.item.slots[rows][cols] == 1;
 					
 					if(isSolid)
 					{
-						let slot2 = slot.inventoryWindow.getSlot(new Vector2(slot.position.x + x, slot.position.y + y));
+						let slot2 = slot.inventoryWindow.getSlot(new Vector2Grid(slot.position.cols + cols, slot.position.rows + rows));
 						
 						if(!ItemDrag.slotModifications.has(slot2))
 						{
@@ -166,6 +165,17 @@ class ItemDrag
 	
 	startMove(): void
 	{
+		if(this.item.id !== null)
+		{
+			addNetworkPreChange(itemManager.getItemIndex(this.item), {
+				rotation: this.item.rotation,
+				isFlipped: this.item.isFlipped,
+				inventoryWindow: this.item.inventoryWindow,
+				inventoryPosition: this.item.inventoryPosition
+			});
+		}
+		
+		
 		this.item.html.css("pointer-events", "none");
 		
 		if(this.item.inventoryWindow)
@@ -174,4 +184,3 @@ class ItemDrag
 		}
 	}
 }
-export {ItemDrag};

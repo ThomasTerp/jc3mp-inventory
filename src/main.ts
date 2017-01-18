@@ -18,27 +18,30 @@ jcmp.events.Add("PlayerReady", (player) => {
 		{
 			if(inventory === undefined)
 			{
-				player["inventory"] = new Inventory(new Vector2(10, 20));
-				player["inventory"].uniqueName = inventoryUniqueName;
+				player.inventory = new Inventory(new Vector2(10, 20));
+				player.inventory.uniqueName = inventoryUniqueName;
 				
-				player["inventory"].addItem(new items.AppleItem(), new Vector2(0, 0));
-				player["inventory"].addItem(new items.GasCanItem(), new Vector2(1, 0));
-				player["inventory"].addItem(new items.GasCanItem(), new Vector2(4, 0));
+				player.inventory.addItem(new items.AppleItem(), new Vector2(0, 0));
+				player.inventory.addItem(new items.GasCanItem(), new Vector2(1, 0));
+				player.inventory.addItem(new items.GasCanItem(), new Vector2(4, 0));
 				
-				database.saveInventory(player["inventory"], true, () =>
+				database.saveInventory(player.inventory, true, () =>
 				{
 					resolve();
 				});
 			}
 			else
 			{
-				player["inventory"] = inventory;
+				player.inventory = inventory;
 				
 				resolve();
 			}
 		}).then(() =>
 		{
-			network.sendInventory(player, player["inventory"], true);
+			setTimeout(() =>
+			{
+				network.sendInventory(player, player.inventory, true);
+			}, 5000);
 		}).catch((err) =>
 		{
 			console.log(err);
