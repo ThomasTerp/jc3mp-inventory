@@ -25,7 +25,12 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendItems", (itemsData) =
 	jcmp.ui.CallEvent("jc3mp-inventory/ui/sendItems", itemsData);
 });
 
-jcmp.ui.AddEvent("jc3mp-inventory/network/sendChanges", (changesData) =>
+jcmp.ui.AddEvent("jc3mp-inventory/client/sendChanges", (changesData) =>
 {
 	sendChanges(JSON.parse(changesData))
+});
+
+jcmp.ui.AddEvent("jc3mp-inventory/client/requestLocalInventory", () =>
+{
+	jcmp.events.CallRemote("jc3mp-inventory/network/requestLocalInventory");
 });

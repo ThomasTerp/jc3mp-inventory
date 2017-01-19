@@ -6,6 +6,7 @@ import {Vector2} from "./../vector2";
 import {Vector2Grid} from "./../vector2Grid";
 import * as util from "./../../util";
 import * as itemManager from "./../../managers/itemManager";
+import * as network from "./../../network";
 
 
 /** Class for an inventory with items */
@@ -175,7 +176,7 @@ export class InventoryWindow extends Window
 			
 			this.setSlotsItem(item);
 			
-			addNetworkChange(itemManager.getItemIndex(item), "move");
+			network.addChange(itemManager.getItemIndex(item), "move");
 		}
 	}
 	
@@ -200,6 +201,7 @@ export class InventoryWindow extends Window
 		return this.items.indexOf(item) === -1 ? false : true;
 	}
 	
+	/** Returns true if the item will be inside the inventory bounds  */
 	isItemWithinInventory(item: Item, position: Vector2Grid): boolean
 	{
 		let itemSize = item.getSize();
@@ -207,6 +209,7 @@ export class InventoryWindow extends Window
 		return position.cols + itemSize.cols <= this.size.cols && position.rows + itemSize.rows <= this.size.rows;
 	}
 	
+	/** Returns true if the item will not collide with any other item */
 	canItemBePlaced(item: Item, position: Vector2Grid): boolean
 	{
 		let itemSize = item.getSize();
@@ -221,7 +224,7 @@ export class InventoryWindow extends Window
 				{
 					let slot = this.getSlot(new Vector2Grid(position.cols + cols, position.rows + rows));
 					
-					if(slot.item !== null)
+					if(slot.item != undefined)
 					{
 						return false;
 					}
@@ -278,7 +281,6 @@ export class InventorySlot
     {
 		this.createHTML();
 		
-		this.item = null;
         this.inventoryWindow = inventoryWindow;
         this.position = position;
         this.state = "empty";
@@ -303,146 +305,4 @@ export class InventorySlot
 		
         return this.html;
     }
-}
-
-
-let localInventoryWindow = null;
-
-export function setLocalInventoryWindow(inventoryWindow: InventoryWindow): void
-{
-	localInventoryWindow = inventoryWindow;
-}
-
-export function getLocalInventoryWindow(): InventoryWindow
-{
-	return localInventoryWindow
-}
-
-
-const networkChangesMap: Map<number, string> = new Map();
-const networkPreChangesMap: Map<number, Object> = new Map();
-
-export function addNetworkChange(itemIndex: number, networkChange: string): void
-{
-	networkChangesMap.set(itemIndex, networkChange)
-}
-
-export function addNetworkPreChange(itemIndex: number, networkPreChange: Object): void
-{
-	networkPreChangesMap.set(itemIndex, networkPreChange)
-}
-
-export function clearNetworkChanges(): void
-{
-	networkChangesMap.clear();
-	networkPreChangesMap.clear();
-}
-
-export function sendNetworkChanges()
-{
-	const networkChangesData = [];
-	
-	for(let [itemIndex, networkChange] of networkChangesMap.entries())
-	{
-		const item = itemManager.getByItemIndex(itemIndex);
-		
-		if(item !== undefined)
-		{
-			const networkPreChange = networkPreChangesMap.get(itemIndex);
-			
-			if(networkPreChange !== undefined)
-			{
-				switch(networkChange)
-				{
-					//When a item is moved in any way
-					case "move":
-						if(networkChange === "move")
-						{
-							//If a item does not have an ID, and if the player is an admin (server sided check), a new item will be created
-							if(item.id === null)
-							{
-								const finalNetworkChange = {
-									changeType: "create",
-									type: item.constructor.name,
-									rotation: item.rotation,
-									isFlipped: item.isFlipped
-								};
-								
-								if(item.inventoryWindow !== null && item.inventoryWindow.uniqueName !== null)
-								{
-									finalNetworkChange.inventoryUniqueName = item.inventoryWindow.uníqueName,
-									finalNetworkChange.inventoryPosition = {
-										cols: item.inventoryPosition.cols,
-										rows: item.inventoryPosition.rows
-									}
-								}
-								
-								networkChangesData.push(finalNetworkChange);
-							}
-							else
-							{
-								//If the item has actually changed in any way
-								if(
-									item.rotation !== networkPreChange.rotation ||
-									item.isFlipped !== networkPreChange.isFlipped ||
-									item.inventoryWindow !== networkPreChange.inventoryWindow ||
-									item.inventoryPosition !== networkPreChange.inventoryPosition
-								)
-								{
-									const finalNetworkChange = {
-										changeType: "move",
-										id: item.id,
-										rotation: item.rotation,
-										isFlipped: item.isFlipped
-									};
-									
-									if(item.inventoryWindow !== null && item.inventoryWindow.uniqueName !== null)
-									{
-										finalNetworkChange.inventoryUniqueName = item.inventoryWindow.uniqueName,
-										finalNetworkChange.inventoryPosition = {
-											cols: item.inventoryPosition.cols,
-											rows: item.inventoryPosition.rows
-										}
-									}
-									
-									networkChangesData.push(finalNetworkChange);
-								}
-							}
-						}
-						
-						break;
-					
-					//When a item is dropped (dragged outside inventories)
-					case "drop":
-						//If a item does not have an ID, and if the player is an admin (server sided check), an new item will be created and dropped
-						if(item.id === null)
-						{
-							networkChangesData.push({
-								changeType: "dropCreate",
-								type: item.constructor.name,
-							});
-						}
-						else
-						{
-							networkChangesData.push({
-								changeType: "drop",
-								id: item.id
-							});
-						}
-						
-						break;
-				}
-			}
-		}
-	}
-	
-	if(networkChangesData.length > 0)
-	{
-		if(typeof jcmp !== "undefined")
-		{
-			jcmp.CallEvent("jc3mp-inventory/network/sendChanges", JSON.stringify(networkChangesData));
-		}
-	}
-	
-	clearNetworkChanges();
 }

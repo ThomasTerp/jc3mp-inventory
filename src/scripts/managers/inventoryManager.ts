@@ -1,5 +1,5 @@
 "use strict";
-import {Inventory} from "./inventory";
+import {Inventory} from "./../classes/inventory";
 
 
 const inventoriesMap: Map<string, Inventory> = new Map();
@@ -24,7 +24,7 @@ export function remove(uniqueName: string): void
 	
     if(inventory)
 	{
-        inventory.uniqueName = null;
+        inventory.uniqueName = undefined;
 		
         inventoriesMap.delete(uniqueName);
     }

@@ -1,18 +1,20 @@
 "use strict";
 import {Item} from "./items";
-import {InventorySlot} from "./inventorySlot";
+import {Vector2Grid} from "./vector2Grid";
 
 
-class Inventory
+/** Class for an inventory with items */
+export class Inventory
 {
 	uniqueName: string;
+	name: string;
 	items: Item[];
 	slots: InventorySlot[][];
-	size: Vector2;
+	size: Vector2Grid;
 	
-	constructor(size: Vector2)
+	constructor(name: string, size: Vector2Grid)
 	{
-		this.uniqueName = null;
+		this.name = name;
 		this.items = [];
 		this.size = size;
 		this.slots = [];
@@ -22,33 +24,33 @@ class Inventory
 	
 	createSlots()
 	{
-		for(let y = 0; y < this.size.y; y++)
+		for(let rows = 0; rows < this.size.rows; rows++)
 		{
-			this.slots[y] = [];
+			this.slots[rows] = [];
 			
-			for(let x = 0; x < this.size.x; x++)
+			for(let cols = 0; cols < this.size.cols; cols++)
 			{
-				this.slots[y][x] = new InventorySlot(this, new Vector2(x, y));
+				this.slots[rows][cols] = new InventorySlot(this, new Vector2Grid(cols, rows));
 			}
 		}
 	}
 	
-	getSlot(position: Vector2): InventorySlot
+	getSlot(position: Vector2Grid): InventorySlot
 	{
-		return this.slots[position.y][position.x];
+		return this.slots[position.rows][position.cols];
 	}
 	
 	setSlotsItem(item: Item): void
 	{
-		for(let y = 0; y < item.slots.length; y++)
+		for(let rows = 0; rows < item.slots.length; rows++)
 		{
-			for(let x = 0; x < item.slots[y].length; x++)
+			for(let cols = 0; cols < item.slots[rows].length; cols++)
 			{
-				let isSolid = item.slots[y][x] == 1;
+				let isSolid = item.slots[rows][cols] == 1;
 				
 				if(isSolid)
 				{
-					let slot = this.getSlot(new Vector2(item.inventoryPosition.x + x, item.inventoryPosition.y + y));
+					let slot = this.getSlot(new Vector2Grid(item.inventoryPosition.cols + cols, item.inventoryPosition.rows + rows));
 					slot.item = item;
 				}
 			}
@@ -57,22 +59,22 @@ class Inventory
 	
 	unsetSlotsItem(item: Item): void
 	{
-		for(let y = 0; y < item.slots.length; y++)
+		for(let rows = 0; rows < item.slots.length; rows++)
 		{
-			for(let x = 0; x < item.slots[y].length; x++)
+			for(let cols = 0; cols < item.slots[rows].length; cols++)
 			{
-				let isSolid = item.slots[y][x] == 1;
+				let isSolid = item.slots[rows][cols] == 1;
 				
 				if(isSolid)
 				{
-					let slot = this.getSlot(new Vector2(item.inventoryPosition.x + x, item.inventoryPosition.y + y));
+					let slot = this.getSlot(new Vector2Grid(item.inventoryPosition.cols + cols, item.inventoryPosition.rows + rows));
 					slot.item = undefined;
 				}
 			}
 		}
 	}
 	
-	addItem(item: Item, position: Vector2): void
+	addItem(item: Item, position: Vector2Grid): void
 	{
 		if(!this.hasItem(item))
 		{
@@ -91,8 +93,8 @@ class Inventory
 		{
 			this.unsetSlotsItem(item);
 			
-			item.inventory = null;
-			item.inventoryPosition = null;
+			item.inventory = undefined;
+			item.inventoryPosition = undefined;
 			
 			this.items.splice(this.items.indexOf(item), 1);
 		}
@@ -103,28 +105,30 @@ class Inventory
 		return this.items.indexOf(item) === -1 ? false : true;
 	}
 	
-	isItemWithinInventory(item: Item, position: Vector2): boolean
+	/** Returns true if the item will be inside the inventory bounds  */
+	isItemWithinInventory(item: Item, position: Vector2Grid): boolean
 	{
 		let itemSize = item.getSize();
 		
-		return position.x + itemSize.x <= this.size.x && position.y + itemSize.y <= this.size.y;
+		return position.cols + itemSize.cols <= this.size.cols && position.rows + itemSize.rows <= this.size.rows;
 	}
 	
-	canItemBePlaced(item: Item, position: Vector2): boolean
+	/** Returns true if the item will not collide with any other item */
+	canItemBePlaced(item: Item, position: Vector2Grid): boolean
 	{
 		let itemSize = item.getSize();
 		
-		for(let y = 0; y < itemSize.y; y++)
+		for(let rows = 0; rows < itemSize.rows; rows++)
 		{
-			for(let x = 0; x < itemSize.x; x++)
+			for(let cols = 0; cols < itemSize.cols; cols++)
 			{
-				let isSolid = item.slots[y][x] == 1;
+				let isSolid = item.slots[rows][cols] === 1;
 				
 				if(isSolid)
 				{
-					let slot = this.getSlot(new Vector2(position.x + x, position.y + y));
+					let slot = this.getSlot(new Vector2Grid(position.cols + cols, position.rows + rows));
 					
-					if(slot.item)
+					if(slot.item != undefined)
 					{
 						return false;
 					}
@@ -135,4 +139,17 @@ class Inventory
 		return true
 	}
 }
-export {Inventory};
+
+/** Class for a slot in an inventory */
+export class InventorySlot
+{
+	inventory: Inventory;
+	position: Vector2Grid;
+	item: Item;
+	
+    constructor(inventoryWindow: Inventory, position: Vector2Grid)
+    {
+        this.inventory = inventoryWindow;
+        this.position = position;
+    }
+}

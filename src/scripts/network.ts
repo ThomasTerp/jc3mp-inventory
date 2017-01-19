@@ -1,6 +1,7 @@
 "use strict";
-import {Item} from "./classes/items"
-import {Inventory} from "./classes/inventory"
+import {Item} from "./classes/items";
+import {Inventory} from "./classes/inventory";
+import {Vector2Grid} from "./classes/vector2Grid";
 import * as inventoryManager from "./managers/inventoryManager";
 import * as itemManager from "./managers/itemManager";
 import * as database from "./database";
@@ -8,7 +9,7 @@ import * as database from "./database";
 
 export function sendInventory(player: Player, inventory: Inventory, isLocal: boolean = false): void
 {
-	if(inventory.uniqueName === null)
+	if(inventory.uniqueName == undefined)
 	{
 		throw `[jc3mp-inventory] Network error: Inventory does not have an uniqueName`;
 	}
@@ -16,11 +17,12 @@ export function sendInventory(player: Player, inventory: Inventory, isLocal: boo
 	{
 		const inventoryData = {
 			uniqueName: inventory.uniqueName,
+			name: inventory.name,
 			size: {
-				x: inventory.size.x,
-				y: inventory.size.y
+				cols: inventory.size.cols,
+				rows: inventory.size.rows
 			}
-		}
+		} as any;
 		
 		if(isLocal)
 		{
@@ -37,21 +39,21 @@ export function sendItems(player: Player, items: Item[]): void
 	
 	items.forEach((item, itemIndex) =>
 	{
-		if(item.id !== null)
+		if(item.id != undefined)
 		{
 			const itemData = {
 				type: item.constructor.name,
 				id: item.id,
 				rotation: item.rotation,
 				isFlipped: item.isFlipped,
-			};
+			} as any;
 			
-			if(item.inventory !== null)
+			if(item.inventory != undefined)
 			{
 				itemData.inventoryUniqueName = item.inventory.uniqueName;
 				itemData.inventoryPosition = {
-					x: item.inventoryPosition.x,
-					y: item.inventoryPosition.y
+					cols: item.inventoryPosition.cols,
+					rows: item.inventoryPosition.rows
 				};
 			}
 			
@@ -66,7 +68,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/requestInventoryItems", (
 {
 	const inventory = inventoryManager.get(inventoryUniqueName);
 	
-	if(inventory !== undefined)
+	if(inventory != undefined)
 	{
 		sendItems(player, inventory.items);
 	}
@@ -74,7 +76,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/requestInventoryItems", (
 
 jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", (player, changesData) =>
 {
-	if(player.inventory === undefined)
+	if(player.inventory == undefined)
 	{
 		console.log(`[jc3mp-inventory] Warning: Player "${player.client.name}" (${player.client.steamId} tried to make changes to their inventory, but they do not have an inventory`)
 	}
@@ -92,7 +94,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", (player, ch
 				case "move":
 					const item = itemManager.get(changeData.id);
 					
-					if(item === undefined)
+					if(item == undefined)
 					{
 						console.log(`[jc3mp-inventory] Warning: Player "${player.client.name}" (${player.client.steamId} tried to move a non existing item`)
 						resendInventory = true;
@@ -102,9 +104,9 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", (player, ch
 					
 					const newInventory = inventoryManager.get(changeData.inventoryUniqueName);
 					
-					if(newInventory !== undefined)
+					if(newInventory != undefined)
 					{
-						if(item.inventory !== null)
+						if(item.inventory != undefined)
 						{
 							item.inventory.removeItem(item);
 						}
@@ -114,7 +116,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", (player, ch
 						
 						item.updateSlots();
 						
-						newInventory.addItem(item, new Vector2(changeData.inventoryPosition.x, changeData.inventoryPosition.y));
+						newInventory.addItem(item, new Vector2Grid(changeData.inventoryPosition.cols, changeData.inventoryPosition.rows));
 					}
 					
 					break;
@@ -134,5 +136,13 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", (player, ch
 		}
 		
 		database.saveInventory(player.inventory, true);
+	}
+});
+
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/requestLocalInventory", (player) =>
+{
+	if(player["inventory"] != undefined)
+	{
+		sendInventory(player, player["inventory"], true);
 	}
 });

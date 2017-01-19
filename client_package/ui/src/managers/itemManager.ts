@@ -2,146 +2,14 @@
 import {Item} from "./../classes/items";
 import {ItemDrag} from "./../classes/itemDrag";
 import {Vector2} from "./../classes/vector2";
-import {addNetworkChange} from "./../classes/windows/inventoryWindow";
 import * as itemSelection from "./../itemSelection";
+import * as network from "./../network";
 import * as util from "./../util";
 
 
 const itemsHTML = $("body > .items");
 const items: Array<Item> = [];
 const itemsMap: Map<number, Item> = new Map();
-
-
-$(document.body).on("mousemove", (event) =>
-{
-	ItemDrag.undoSlotModifications();
-	
-	ItemDrag.forEachInItemManager((itemDrag) =>
-	{
-		if(util.isCtrlPressed() && !itemDrag.hasMoved)
-		{
-			delete itemDrag.item.itemDrag;
-			
-			return;
-		}
-		
-		itemDrag.update();
-	});
-});
-
-//Dropping of item drag
-$(document.body).on("mouseup", (event) =>
-{
-	ItemDrag.forEachInItemManager((itemDrag) =>
-	{
-		if(itemDrag.hasMoved)
-		{
-			itemDrag.update();
-			ItemDrag.undoSlotModifications();
-			
-			const slot = itemDrag.getSlot(itemDrag.getPosition());
-			const itemIndex = getItemIndex(itemDrag.item);
-			let isDroppedOutside = false;
-			
-			if(slot)
-			{
-				if(!slot.inventoryWindow.isItemWithinInventory(itemDrag.item, slot.position) || !slot.inventoryWindow.canItemBePlaced(itemDrag.item, slot.position))
-				{
-					isDroppedOutside = true;
-				}
-			}
-			else
-			{
-				isDroppedOutside = true;
-			}
-			
-			
-			if(isDroppedOutside)
-			{
-				itemDrag.item.html.css({
-					"pointer-events": "auto",
-				});
-				
-				addNetworkChange(itemIndex, "drop");
-			}
-			else
-			{
-				slot.inventoryWindow.addItem(itemDrag.item, slot.position);
-				
-				addNetworkChange(itemIndex, "move");
-			}
-			
-			itemDrag.item.state = "selected";
-		}
-		
-		delete itemDrag.item.itemDrag;
-	});
-});
-
-//Dragging of items outside inventory
-$(document.body).on("mousedown", ".item", (event) =>
-{
-	let item: Item = $(event.currentTarget).data("item");
-	
-	if(item && exists(item) && !util.isCtrlPressed())
-	{
-        startDragging(item, new Vector2(event.pageX, event.pageY));
-		
-		event.preventDefault();
-	}
-});
-
-$(document.body).on("keydown", (event) =>
-{
-	ItemDrag.undoSlotModifications();
-	
-	ItemDrag.forEachInItemManager((itemDrag) =>
-	{
-		if(itemDrag.hasMoved)
-		{
-			switch(event.which) {
-				//Left
-				case 37:
-					itemDrag.item.rotateClockwise();
-					
-					break;
-				
-				//Up
-				case 38:
-					itemDrag.item.flip();
-					
-					break;
-				
-				//Right
-				case 39:
-					itemDrag.item.rotateCounterClockwise();
-					
-					break;
-					
-				//Down
-				case 40:
-					itemDrag.item.flip();
-					
-					break;
-				
-				//Exit this function if any other keys triggered the event
-				default:
-					return;
-			}
-			
-			itemDrag.update();
-		}
-	});
-});
-
-$(window).on("resize", (event) =>
-{
-	forEach((id, item) =>
-	{
-		item.updateHTML();
-	});
-});
-
 
 /** Start dragging selected items, this should be called inside a mousedown event */
 export function startDragging(item: Item, position: Vector2): void
@@ -170,7 +38,7 @@ export function add(item: Item): Item
 {
     remove(item);
 	
-	if(item.id !== null)
+	if(item.id != undefined)
 	{
 	    itemsMap.set(item.id, item);
 	}
@@ -188,7 +56,7 @@ export function remove(item: Item): void
 	{
         item.html.detach();
 		
-		if(item.id !== null)
+		if(item.id != undefined)
 		{
 	        itemsMap.delete(item.id);
 		}
@@ -215,7 +83,7 @@ export function getItemIndex(item: Item)
 
 export function exists(item: Item): boolean
 {
-	if(getByID(item.id) !== undefined)
+	if(getByID(item.id) != undefined)
 	{
 		return true;
 	}

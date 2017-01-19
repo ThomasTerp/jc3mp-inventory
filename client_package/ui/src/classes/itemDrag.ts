@@ -3,8 +3,8 @@ import {InventorySlot} from "./windows/inventoryWindow";
 import {Item} from "./items/item";
 import {Vector2} from "./vector2";
 import {Vector2Grid} from "./vector2Grid";
-import {addNetworkPreChange} from "./windows/inventoryWindow";
 import * as itemManager from "./../managers/itemManager";
+import * as network from "./../network";
 import * as util from "./../util";
 
 
@@ -165,9 +165,9 @@ export class ItemDrag
 	
 	startMove(): void
 	{
-		if(this.item.id !== null)
+		if(this.item.id != undefined)
 		{
-			addNetworkPreChange(itemManager.getItemIndex(this.item), {
+			network.addPreChange(itemManager.getItemIndex(this.item), {
 				rotation: this.item.rotation,
 				isFlipped: this.item.isFlipped,
 				inventoryWindow: this.item.inventoryWindow,
@@ -184,3 +184,133 @@ export class ItemDrag
 		}
 	}
 }
+
+$(document.body).on("mousemove", (event) =>
+{
+	ItemDrag.undoSlotModifications();
+	
+	ItemDrag.forEachInItemManager((itemDrag) =>
+	{
+		if(util.isCtrlPressed() && !itemDrag.hasMoved)
+		{
+			delete itemDrag.item.itemDrag;
+			
+			return;
+		}
+		
+		itemDrag.update();
+	});
+});
+
+//Dropping of item drag
+$(document.body).on("mouseup", (event) =>
+{
+	ItemDrag.forEachInItemManager((itemDrag) =>
+	{
+		if(itemDrag.hasMoved)
+		{
+			itemDrag.update();
+			ItemDrag.undoSlotModifications();
+			
+			const slot = itemDrag.getSlot(itemDrag.getPosition());
+			const itemIndex = itemManager.getItemIndex(itemDrag.item);
+			let isDroppedOutside = false;
+			
+			if(slot)
+			{
+				if(!slot.inventoryWindow.isItemWithinInventory(itemDrag.item, slot.position) || !slot.inventoryWindow.canItemBePlaced(itemDrag.item, slot.position))
+				{
+					isDroppedOutside = true;
+				}
+			}
+			else
+			{
+				isDroppedOutside = true;
+			}
+			
+			
+			if(isDroppedOutside)
+			{
+				itemDrag.item.html.css({
+					"pointer-events": "auto",
+				});
+				
+				network.addChange(itemIndex, "drop");
+			}
+			else
+			{
+				slot.inventoryWindow.addItem(itemDrag.item, slot.position);
+				
+				network.addChange(itemIndex, "move");
+			}
+			
+			itemDrag.item.state = "selected";
+		}
+		
+		delete itemDrag.item.itemDrag;
+	});
+});
+
+//Dragging of items outside inventory
+$(document.body).on("mousedown", ".item", (event) =>
+{
+	let item: Item = $(event.currentTarget).data("item");
+	
+	if(item && itemManager.exists(item) && !util.isCtrlPressed())
+	{
+        itemManager.startDragging(item, new Vector2(event.pageX, event.pageY));
+		
+		event.preventDefault();
+	}
+});
+
+$(document.body).on("keydown", (event) =>
+{
+	ItemDrag.undoSlotModifications();
+	
+	ItemDrag.forEachInItemManager((itemDrag) =>
+	{
+		if(itemDrag.hasMoved)
+		{
+			switch(event.which) {
+				//Left
+				case 37:
+					itemDrag.item.rotateClockwise();
+					
+					break;
+				
+				//Up
+				case 38:
+					itemDrag.item.flip();
+					
+					break;
+				
+				//Right
+				case 39:
+					itemDrag.item.rotateCounterClockwise();
+					
+					break;
+					
+				//Down
+				case 40:
+					itemDrag.item.flip();
+					
+					break;
+				
+				//Exit this function if any other keys triggered the event
+				default:
+					return;
+			}
+			
+			itemDrag.update();
+		}
+	});
+});
+
+$(window).on("resize", (event) =>
+{
+	itemManager.forEach((id, item) =>
+	{
+		item.updateHTML();
+	});
+});

@@ -15,7 +15,10 @@ abstract class Window
 	{
 		this._uniqueName = value;
 		
-		this.html.attr("id", "window-" + this.uniqueName);
+		if(value != undefined)
+		{
+			this.html.attr("id", "window-" + this.uniqueName);
+		}
 	}
 	get uniqueName(): string
 	{
@@ -37,7 +40,7 @@ abstract class Window
 			this.html.hide();
 		}
 		
-		if(typeof jcmp !== "undefined")
+		if(typeof jcmp != "undefined")
 		{
 			jcmp.CallEvent("jc3mp-inventory/ui/windowVisibilityChanged", this.uniqueName, this.isVisible);
 		}
@@ -51,7 +54,6 @@ abstract class Window
 	{
 		this.createHTML();
 		
-		this.uniqueName = null;
 		this.titleHTML.html(titleHTML);
 		
 		//Im avoiding this.hide() because I don't want to call the windowVisibilityChanged event the first time its hidden

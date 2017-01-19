@@ -1,18 +1,20 @@
 "use strict";
+var vector2Grid_1 = require("./classes/vector2Grid");
 var inventoryManager = require("./managers/inventoryManager");
 var itemManager = require("./managers/itemManager");
 var database = require("./database");
 function sendInventory(player, inventory, isLocal) {
     if (isLocal === void 0) { isLocal = false; }
-    if (inventory.uniqueName === null) {
+    if (inventory.uniqueName == undefined) {
         throw "[jc3mp-inventory] Network error: Inventory does not have an uniqueName";
     }
     else {
         var inventoryData = {
             uniqueName: inventory.uniqueName,
+            name: inventory.name,
             size: {
-                x: inventory.size.x,
-                y: inventory.size.y
+                cols: inventory.size.cols,
+                rows: inventory.size.rows
             }
         };
         if (isLocal) {
@@ -25,18 +27,18 @@ exports.sendInventory = sendInventory;
 function sendItems(player, items) {
     var itemsData = [];
     items.forEach(function (item, itemIndex) {
-        if (item.id !== null) {
+        if (item.id != undefined) {
             var itemData = {
                 type: item.constructor.name,
                 id: item.id,
                 rotation: item.rotation,
                 isFlipped: item.isFlipped,
             };
-            if (item.inventory !== null) {
+            if (item.inventory != undefined) {
                 itemData.inventoryUniqueName = item.inventory.uniqueName;
                 itemData.inventoryPosition = {
-                    x: item.inventoryPosition.x,
-                    y: item.inventoryPosition.y
+                    cols: item.inventoryPosition.cols,
+                    rows: item.inventoryPosition.rows
                 };
             }
             itemsData.push(itemData);
@@ -47,12 +49,12 @@ function sendItems(player, items) {
 exports.sendItems = sendItems;
 jcmp.events.AddRemoteCallable("jc3mp-inventory/network/requestInventoryItems", function (player, inventoryUniqueName) {
     var inventory = inventoryManager.get(inventoryUniqueName);
-    if (inventory !== undefined) {
+    if (inventory != undefined) {
         sendItems(player, inventory.items);
     }
 });
 jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", function (player, changesData) {
-    if (player.inventory === undefined) {
+    if (player.inventory == undefined) {
         console.log("[jc3mp-inventory] Warning: Player \"" + player.client.name + "\" (" + player.client.steamId + " tried to make changes to their inventory, but they do not have an inventory");
     }
     else {
@@ -63,20 +65,20 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", function (p
             switch (changeData.changeType) {
                 case "move":
                     var item = itemManager.get(changeData.id);
-                    if (item === undefined) {
+                    if (item == undefined) {
                         console.log("[jc3mp-inventory] Warning: Player \"" + player.client.name + "\" (" + player.client.steamId + " tried to move a non existing item");
                         resendInventory = true;
                         break;
                     }
                     var newInventory = inventoryManager.get(changeData.inventoryUniqueName);
-                    if (newInventory !== undefined) {
-                        if (item.inventory !== null) {
+                    if (newInventory != undefined) {
+                        if (item.inventory != undefined) {
                             item.inventory.removeItem(item);
                         }
                         item.rotation = changeData.rotation;
                         item.isFlipped = changeData.isFlipped;
                         item.updateSlots();
-                        newInventory.addItem(item, new Vector2(changeData.inventoryPosition.x, changeData.inventoryPosition.y));
+                        newInventory.addItem(item, new vector2Grid_1.Vector2Grid(changeData.inventoryPosition.cols, changeData.inventoryPosition.rows));
                     }
                     break;
                 case "drop":
@@ -88,5 +90,10 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", function (p
             }
         }
         database.saveInventory(player.inventory, true);
+    }
+});
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/requestLocalInventory", function (player) {
+    if (player["inventory"] != undefined) {
+        sendInventory(player, player["inventory"], true);
     }
 });

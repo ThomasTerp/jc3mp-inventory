@@ -34,9 +34,9 @@ export function remove(uniqueName: string): void
 {
     let window = get(uniqueName);
 	
-    if(window !== undefined)
+    if(window != undefined)
 	{
-        window.uniqueName = null;
+        window.uniqueName = undefined;
         
         window.html.detach();
 		

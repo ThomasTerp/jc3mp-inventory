@@ -46,37 +46,10 @@
 
 	"use strict";
 	__webpack_require__(1);
+	__webpack_require__(5);
 	__webpack_require__(9);
-	__webpack_require__(39);
-	__webpack_require__(40);
-	const windowManager = __webpack_require__(10);
-	const inventoryWindow_1 = __webpack_require__(3);
-	const adminWindow_1 = __webpack_require__(41);
-	let adminWindow = new adminWindow_1.AdminWindow("Items");
-	windowManager.add("adminWindow", adminWindow);
-	let chatIsOpen = false;
-	if (typeof jcmp !== "undefined") {
-	    jcmp.AddEvent('chat_input_state', function (state) {
-	        chatIsOpen = state;
-	    });
-	}
-	$(document).on("keydown", (event) => {
-	    if (!chatIsOpen) {
-	        switch (event.which) {
-	            case 73:
-	                const inventoryWindow = inventoryWindow_1.getLocalInventoryWindow();
-	                if (inventoryWindow !== null) {
-	                    inventoryWindow.toggle();
-	                }
-	                break;
-	            case 79:
-	                adminWindow.toggle();
-	                break;
-	            default:
-	                return;
-	        }
-	    }
-	});
+	__webpack_require__(41);
+	__webpack_require__(42);
 
 
 /***/ },
@@ -88,10 +61,10 @@
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
 	__export(__webpack_require__(2));
-	__export(__webpack_require__(12));
-	__export(__webpack_require__(26));
-	__export(__webpack_require__(32));
-	__export(__webpack_require__(37));
+	__export(__webpack_require__(15));
+	__export(__webpack_require__(28));
+	__export(__webpack_require__(34));
+	__export(__webpack_require__(39));
 
 
 /***/ },
@@ -129,7 +102,6 @@
 	    }
 	    constructor() {
 	        this.createHTML();
-	        this.id = null;
 	        this.rotation = 0;
 	        this.isFlipped = false;
 	        this.isSelected = false;
@@ -280,6 +252,7 @@
 	const vector2Grid_1 = __webpack_require__(7);
 	const util = __webpack_require__(11);
 	const itemManager = __webpack_require__(8);
+	const network = __webpack_require__(12);
 	class InventoryWindow extends window_1.Window {
 	    constructor(titleHTML, size) {
 	        super(titleHTML);
@@ -379,7 +352,7 @@
 	            item.html.css("pointer-events", "none");
 	            this.html.find(".items").append(item.html);
 	            this.setSlotsItem(item);
-	            addNetworkChange(itemManager.getItemIndex(item), "move");
+	            network.addChange(itemManager.getItemIndex(item), "move");
 	        }
 	    }
 	    removeItem(item) {
@@ -406,7 +379,7 @@
 	                let isSolid = item.slots[rows][cols] === 1;
 	                if (isSolid) {
 	                    let slot = this.getSlot(new vector2Grid_1.Vector2Grid(position.cols + cols, position.rows + rows));
-	                    if (slot.item !== null) {
+	                    if (slot.item != undefined) {
 	                        return false;
 	                    }
 	                }
@@ -434,7 +407,6 @@
 	    }
 	    constructor(inventoryWindow, position) {
 	        this.createHTML();
-	        this.item = null;
 	        this.inventoryWindow = inventoryWindow;
 	        this.position = position;
 	        this.state = "empty";
@@ -456,105 +428,6 @@
 	    }
 	}
 	exports.InventorySlot = InventorySlot;
-	let localInventoryWindow = null;
-	function setLocalInventoryWindow(inventoryWindow) {
-	    localInventoryWindow = inventoryWindow;
-	}
-	exports.setLocalInventoryWindow = setLocalInventoryWindow;
-	function getLocalInventoryWindow() {
-	    return localInventoryWindow;
-	}
-	exports.getLocalInventoryWindow = getLocalInventoryWindow;
-	const networkChangesMap = new Map();
-	const networkPreChangesMap = new Map();
-	function addNetworkChange(itemIndex, networkChange) {
-	    networkChangesMap.set(itemIndex, networkChange);
-	}
-	exports.addNetworkChange = addNetworkChange;
-	function addNetworkPreChange(itemIndex, networkPreChange) {
-	    networkPreChangesMap.set(itemIndex, networkPreChange);
-	}
-	exports.addNetworkPreChange = addNetworkPreChange;
-	function clearNetworkChanges() {
-	    networkChangesMap.clear();
-	    networkPreChangesMap.clear();
-	}
-	exports.clearNetworkChanges = clearNetworkChanges;
-	function sendNetworkChanges() {
-	    const networkChangesData = [];
-	    for (let [itemIndex, networkChange] of networkChangesMap.entries()) {
-	        const item = itemManager.getByItemIndex(itemIndex);
-	        if (item !== undefined) {
-	            const networkPreChange = networkPreChangesMap.get(itemIndex);
-	            if (networkPreChange !== undefined) {
-	                switch (networkChange) {
-	                    case "move":
-	                        if (networkChange === "move") {
-	                            if (item.id === null) {
-	                                const finalNetworkChange = {
-	                                    changeType: "create",
-	                                    type: item.constructor.name,
-	                                    rotation: item.rotation,
-	                                    isFlipped: item.isFlipped
-	                                };
-	                                if (item.inventoryWindow !== null && item.inventoryWindow.uniqueName !== null) {
-	                                    finalNetworkChange.inventoryUniqueName = item.inventoryWindow.uníqueName,
-	                                        finalNetworkChange.inventoryPosition = {
-	                                            cols: item.inventoryPosition.cols,
-	                                            rows: item.inventoryPosition.rows
-	                                        };
-	                                }
-	                                networkChangesData.push(finalNetworkChange);
-	                            }
-	                            else {
-	                                if (item.rotation !== networkPreChange.rotation ||
-	                                    item.isFlipped !== networkPreChange.isFlipped ||
-	                                    item.inventoryWindow !== networkPreChange.inventoryWindow ||
-	                                    item.inventoryPosition !== networkPreChange.inventoryPosition) {
-	                                    const finalNetworkChange = {
-	                                        changeType: "move",
-	                                        id: item.id,
-	                                        rotation: item.rotation,
-	                                        isFlipped: item.isFlipped
-	                                    };
-	                                    if (item.inventoryWindow !== null && item.inventoryWindow.uniqueName !== null) {
-	                                        finalNetworkChange.inventoryUniqueName = item.inventoryWindow.uniqueName,
-	                                            finalNetworkChange.inventoryPosition = {
-	                                                cols: item.inventoryPosition.cols,
-	                                                rows: item.inventoryPosition.rows
-	                                            };
-	                                    }
-	                                    networkChangesData.push(finalNetworkChange);
-	                                }
-	                            }
-	                        }
-	                        break;
-	                    case "drop":
-	                        if (item.id === null) {
-	                            networkChangesData.push({
-	                                changeType: "dropCreate",
-	                                type: item.constructor.name,
-	                            });
-	                        }
-	                        else {
-	                            networkChangesData.push({
-	                                changeType: "drop",
-	                                id: item.id
-	                            });
-	                        }
-	                        break;
-	                }
-	            }
-	        }
-	    }
-	    if (networkChangesData.length > 0) {
-	        if (typeof jcmp !== "undefined") {
-	            jcmp.CallEvent("jc3mp-inventory/network/sendChanges", JSON.stringify(networkChangesData));
-	        }
-	    }
-	    clearNetworkChanges();
-	}
-	exports.sendNetworkChanges = sendNetworkChanges;
 
 
 /***/ },
@@ -565,7 +438,9 @@
 	class Window {
 	    set uniqueName(value) {
 	        this._uniqueName = value;
-	        this.html.attr("id", "window-" + this.uniqueName);
+	        if (value != undefined) {
+	            this.html.attr("id", "window-" + this.uniqueName);
+	        }
 	    }
 	    get uniqueName() {
 	        return this._uniqueName;
@@ -579,7 +454,7 @@
 	        else {
 	            this.html.hide();
 	        }
-	        if (typeof jcmp !== "undefined") {
+	        if (typeof jcmp != "undefined") {
 	            jcmp.CallEvent("jc3mp-inventory/ui/windowVisibilityChanged", this.uniqueName, this.isVisible);
 	        }
 	    }
@@ -588,7 +463,6 @@
 	    }
 	    constructor(titleHTML) {
 	        this.createHTML();
-	        this.uniqueName = null;
 	        this.titleHTML.html(titleHTML);
 	        this.html.hide();
 	    }
@@ -654,8 +528,8 @@
 	const inventoryWindow_1 = __webpack_require__(3);
 	const vector2_1 = __webpack_require__(6);
 	const vector2Grid_1 = __webpack_require__(7);
-	const inventoryWindow_2 = __webpack_require__(3);
 	const itemManager = __webpack_require__(8);
+	const network = __webpack_require__(12);
 	const util = __webpack_require__(11);
 	class ItemDrag {
 	    constructor(item, offset) {
@@ -747,8 +621,8 @@
 	        }
 	    }
 	    startMove() {
-	        if (this.item.id !== null) {
-	            inventoryWindow_2.addNetworkPreChange(itemManager.getItemIndex(this.item), {
+	        if (this.item.id != undefined) {
+	            network.addPreChange(itemManager.getItemIndex(this.item), {
 	                rotation: this.item.rotation,
 	                isFlipped: this.item.isFlipped,
 	                inventoryWindow: this.item.inventoryWindow,
@@ -763,6 +637,83 @@
 	}
 	ItemDrag.slotModifications = new Map();
 	exports.ItemDrag = ItemDrag;
+	$(document.body).on("mousemove", (event) => {
+	    ItemDrag.undoSlotModifications();
+	    ItemDrag.forEachInItemManager((itemDrag) => {
+	        if (util.isCtrlPressed() && !itemDrag.hasMoved) {
+	            delete itemDrag.item.itemDrag;
+	            return;
+	        }
+	        itemDrag.update();
+	    });
+	});
+	$(document.body).on("mouseup", (event) => {
+	    ItemDrag.forEachInItemManager((itemDrag) => {
+	        if (itemDrag.hasMoved) {
+	            itemDrag.update();
+	            ItemDrag.undoSlotModifications();
+	            const slot = itemDrag.getSlot(itemDrag.getPosition());
+	            const itemIndex = itemManager.getItemIndex(itemDrag.item);
+	            let isDroppedOutside = false;
+	            if (slot) {
+	                if (!slot.inventoryWindow.isItemWithinInventory(itemDrag.item, slot.position) || !slot.inventoryWindow.canItemBePlaced(itemDrag.item, slot.position)) {
+	                    isDroppedOutside = true;
+	                }
+	            }
+	            else {
+	                isDroppedOutside = true;
+	            }
+	            if (isDroppedOutside) {
+	                itemDrag.item.html.css({
+	                    "pointer-events": "auto",
+	                });
+	                network.addChange(itemIndex, "drop");
+	            }
+	            else {
+	                slot.inventoryWindow.addItem(itemDrag.item, slot.position);
+	                network.addChange(itemIndex, "move");
+	            }
+	            itemDrag.item.state = "selected";
+	        }
+	        delete itemDrag.item.itemDrag;
+	    });
+	});
+	$(document.body).on("mousedown", ".item", (event) => {
+	    let item = $(event.currentTarget).data("item");
+	    if (item && itemManager.exists(item) && !util.isCtrlPressed()) {
+	        itemManager.startDragging(item, new vector2_1.Vector2(event.pageX, event.pageY));
+	        event.preventDefault();
+	    }
+	});
+	$(document.body).on("keydown", (event) => {
+	    ItemDrag.undoSlotModifications();
+	    ItemDrag.forEachInItemManager((itemDrag) => {
+	        if (itemDrag.hasMoved) {
+	            switch (event.which) {
+	                case 37:
+	                    itemDrag.item.rotateClockwise();
+	                    break;
+	                case 38:
+	                    itemDrag.item.flip();
+	                    break;
+	                case 39:
+	                    itemDrag.item.rotateCounterClockwise();
+	                    break;
+	                case 40:
+	                    itemDrag.item.flip();
+	                    break;
+	                default:
+	                    return;
+	            }
+	            itemDrag.update();
+	        }
+	    });
+	});
+	$(window).on("resize", (event) => {
+	    itemManager.forEach((id, item) => {
+	        item.updateHTML();
+	    });
+	});
 
 
 /***/ },
@@ -800,89 +751,10 @@
 	"use strict";
 	const itemDrag_1 = __webpack_require__(5);
 	const vector2_1 = __webpack_require__(6);
-	const inventoryWindow_1 = __webpack_require__(3);
 	const itemSelection = __webpack_require__(9);
-	const util = __webpack_require__(11);
 	const itemsHTML = $("body > .items");
 	const items = [];
 	const itemsMap = new Map();
-	$(document.body).on("mousemove", (event) => {
-	    itemDrag_1.ItemDrag.undoSlotModifications();
-	    itemDrag_1.ItemDrag.forEachInItemManager((itemDrag) => {
-	        if (util.isCtrlPressed() && !itemDrag.hasMoved) {
-	            delete itemDrag.item.itemDrag;
-	            return;
-	        }
-	        itemDrag.update();
-	    });
-	});
-	$(document.body).on("mouseup", (event) => {
-	    itemDrag_1.ItemDrag.forEachInItemManager((itemDrag) => {
-	        if (itemDrag.hasMoved) {
-	            itemDrag.update();
-	            itemDrag_1.ItemDrag.undoSlotModifications();
-	            const slot = itemDrag.getSlot(itemDrag.getPosition());
-	            const itemIndex = getItemIndex(itemDrag.item);
-	            let isDroppedOutside = false;
-	            if (slot) {
-	                if (!slot.inventoryWindow.isItemWithinInventory(itemDrag.item, slot.position) || !slot.inventoryWindow.canItemBePlaced(itemDrag.item, slot.position)) {
-	                    isDroppedOutside = true;
-	                }
-	            }
-	            else {
-	                isDroppedOutside = true;
-	            }
-	            if (isDroppedOutside) {
-	                itemDrag.item.html.css({
-	                    "pointer-events": "auto",
-	                });
-	                inventoryWindow_1.addNetworkChange(itemIndex, "drop");
-	            }
-	            else {
-	                slot.inventoryWindow.addItem(itemDrag.item, slot.position);
-	                inventoryWindow_1.addNetworkChange(itemIndex, "move");
-	            }
-	            itemDrag.item.state = "selected";
-	        }
-	        delete itemDrag.item.itemDrag;
-	    });
-	});
-	$(document.body).on("mousedown", ".item", (event) => {
-	    let item = $(event.currentTarget).data("item");
-	    if (item && exists(item) && !util.isCtrlPressed()) {
-	        startDragging(item, new vector2_1.Vector2(event.pageX, event.pageY));
-	        event.preventDefault();
-	    }
-	});
-	$(document.body).on("keydown", (event) => {
-	    itemDrag_1.ItemDrag.undoSlotModifications();
-	    itemDrag_1.ItemDrag.forEachInItemManager((itemDrag) => {
-	        if (itemDrag.hasMoved) {
-	            switch (event.which) {
-	                case 37:
-	                    itemDrag.item.rotateClockwise();
-	                    break;
-	                case 38:
-	                    itemDrag.item.flip();
-	                    break;
-	                case 39:
-	                    itemDrag.item.rotateCounterClockwise();
-	                    break;
-	                case 40:
-	                    itemDrag.item.flip();
-	                    break;
-	                default:
-	                    return;
-	            }
-	            itemDrag.update();
-	        }
-	    });
-	});
-	$(window).on("resize", (event) => {
-	    forEach((id, item) => {
-	        item.updateHTML();
-	    });
-	});
 	function startDragging(item, position) {
 	    if (!item.isSelected) {
 	        itemSelection.clearSelection();
@@ -899,7 +771,7 @@
 	exports.startDragging = startDragging;
 	function add(item) {
 	    remove(item);
-	    if (item.id !== null) {
+	    if (item.id != undefined) {
 	        itemsMap.set(item.id, item);
 	    }
 	    items.push(item);
@@ -910,7 +782,7 @@
 	function remove(item) {
 	    if (exists(item)) {
 	        item.html.detach();
-	        if (item.id !== null) {
+	        if (item.id != undefined) {
 	            itemsMap.delete(item.id);
 	        }
 	        items.splice(items.indexOf(item), 1);
@@ -930,7 +802,7 @@
 	}
 	exports.getItemIndex = getItemIndex;
 	function exists(item) {
-	    if (getByID(item.id) !== undefined) {
+	    if (getByID(item.id) != undefined) {
 	        return true;
 	    }
 	    if (items.indexOf(item) !== -1) {
@@ -957,6 +829,7 @@
 
 	"use strict";
 	const inventoryWindow_1 = __webpack_require__(3);
+	const vector2_1 = __webpack_require__(6);
 	const vector2Grid_1 = __webpack_require__(7);
 	const itemManager = __webpack_require__(8);
 	const windowManager = __webpack_require__(10);
@@ -995,7 +868,7 @@
 	        if (!util.isCtrlPressed()) {
 	            clearSelection();
 	        }
-	        createHTML(new Vector2(event.pageX, event.pageY));
+	        createHTML(new vector2_1.Vector2(event.pageX, event.pageY));
 	    }
 	    update();
 	    event.preventDefault();
@@ -1130,8 +1003,8 @@
 	exports.add = add;
 	function remove(uniqueName) {
 	    let window = get(uniqueName);
-	    if (window !== undefined) {
-	        window.uniqueName = null;
+	    if (window != undefined) {
+	        window.uniqueName = undefined;
 	        window.html.detach();
 	        windowsMap.delete(uniqueName);
 	    }
@@ -1277,28 +1150,247 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
+	const inventoryWindow_1 = __webpack_require__(3);
+	const vector2Grid_1 = __webpack_require__(7);
+	const itemManager = __webpack_require__(8);
+	const windowManager = __webpack_require__(10);
+	const itemFactoryManager = __webpack_require__(13);
+	const localInventoryWindow = __webpack_require__(14);
+	const changesMap = new Map();
+	const preChangesMap = new Map();
+	function addChange(itemIndex, change) {
+	    changesMap.set(itemIndex, change);
+	}
+	exports.addChange = addChange;
+	function addPreChange(itemIndex, preChange) {
+	    preChangesMap.set(itemIndex, preChange);
+	}
+	exports.addPreChange = addPreChange;
+	function clearChanges() {
+	    changesMap.clear();
+	    preChangesMap.clear();
+	}
+	exports.clearChanges = clearChanges;
+	function sendChanges() {
+	    const changesData = [];
+	    for (let [itemIndex, change] of changesMap.entries()) {
+	        const item = itemManager.getByItemIndex(itemIndex);
+	        if (item != undefined) {
+	            const preChange = preChangesMap.get(itemIndex);
+	            if (preChange != undefined) {
+	                switch (change) {
+	                    case "move":
+	                        if (change === "move") {
+	                            if (item.id == undefined) {
+	                                const finalNetworkChange = {
+	                                    changeType: "create",
+	                                    type: item.constructor.name,
+	                                    rotation: item.rotation,
+	                                    isFlipped: item.isFlipped
+	                                };
+	                                if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
+	                                    finalNetworkChange.inventoryUniqueName = item.inventoryWindow.uniqueName,
+	                                        finalNetworkChange.inventoryPosition = {
+	                                            cols: item.inventoryPosition.cols,
+	                                            rows: item.inventoryPosition.rows
+	                                        };
+	                                }
+	                                changesData.push(finalNetworkChange);
+	                            }
+	                            else {
+	                                if (item.rotation !== preChange.rotation ||
+	                                    item.isFlipped !== preChange.isFlipped ||
+	                                    item.inventoryWindow !== preChange.inventoryWindow ||
+	                                    item.inventoryPosition !== preChange.inventoryPosition) {
+	                                    const finalNetworkChange = {
+	                                        changeType: "move",
+	                                        id: item.id,
+	                                        rotation: item.rotation,
+	                                        isFlipped: item.isFlipped
+	                                    };
+	                                    if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
+	                                        finalNetworkChange.inventoryUniqueName = item.inventoryWindow.uniqueName,
+	                                            finalNetworkChange.inventoryPosition = {
+	                                                cols: item.inventoryPosition.cols,
+	                                                rows: item.inventoryPosition.rows
+	                                            };
+	                                    }
+	                                    changesData.push(finalNetworkChange);
+	                                }
+	                            }
+	                        }
+	                        break;
+	                    case "drop":
+	                        if (item.id == undefined) {
+	                            changesData.push({
+	                                changeType: "dropCreate",
+	                                type: item.constructor.name,
+	                            });
+	                        }
+	                        else {
+	                            changesData.push({
+	                                changeType: "drop",
+	                                id: item.id
+	                            });
+	                        }
+	                        break;
+	                }
+	            }
+	        }
+	    }
+	    if (changesData.length > 0) {
+	        if (typeof jcmp != "undefined") {
+	            jcmp.CallEvent("jc3mp-inventory/client/sendChanges", JSON.stringify(changesData));
+	        }
+	    }
+	    clearChanges();
+	}
+	exports.sendChanges = sendChanges;
+	function requestLocalInventory() {
+	    jcmp.CallEvent("jc3mp-inventory/client/requestLocalInventory");
+	}
+	exports.requestLocalInventory = requestLocalInventory;
+	if (typeof jcmp != "undefined") {
+	    jcmp.AddEvent("jc3mp-inventory/ui/sendInventory", (inventoryData) => {
+	        inventoryData = JSON.parse(inventoryData);
+	        let inventoryWindow = windowManager.get(inventoryData.uniqueName);
+	        if (inventoryWindow == undefined) {
+	            inventoryWindow = new inventoryWindow_1.InventoryWindow(inventoryData.name, new vector2Grid_1.Vector2Grid(inventoryData.size.cols, inventoryData.size.rows));
+	            windowManager.add(inventoryData.uniqueName, inventoryWindow);
+	        }
+	        if (inventoryData.isLocal) {
+	            if (!localInventoryWindow.exists()) {
+	                inventoryWindow.show();
+	            }
+	            localInventoryWindow.set(inventoryWindow);
+	        }
+	    });
+	    jcmp.AddEvent("jc3mp-inventory/ui/sendItems", (itemsData) => {
+	        itemsData = JSON.parse(itemsData);
+	        itemsData.forEach((itemData, itemDataIndex) => {
+	            let item = itemManager.getByID(itemData.id);
+	            if (item == undefined) {
+	                const itemFactory = itemFactoryManager.get(itemData.type, "default");
+	                if (itemFactory == undefined) {
+	                    console.log(`[jc3mp-inventory] Error: Item class (${itemData.type}) does not have a default factory in the item factory manager`);
+	                    return;
+	                }
+	                else {
+	                    item = itemFactory.assemble();
+	                    item.id = itemData.id;
+	                    item.rotation = itemData.rotation;
+	                    item.isFlipped = itemData.isFlipped;
+	                    item.updateSlots();
+	                    itemManager.add(item);
+	                }
+	            }
+	            if (itemData.inventoryUniqueName != undefined) {
+	                const inventoryWindow = windowManager.get(itemData.inventoryUniqueName);
+	                if (inventoryWindow != undefined) {
+	                    if (item.inventoryWindow != undefined) {
+	                        item.inventoryWindow.removeItem(item);
+	                    }
+	                    item.rotation = itemData.rotation;
+	                    item.isFlipped = itemData.isFlipped;
+	                    item.updateSlots();
+	                    inventoryWindow.addItem(item, new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows));
+	                }
+	            }
+	        });
+	    });
+	}
+
+
+/***/ },
+/* 13 */
+/***/ function(module, exports) {
+
+	"use strict";
+	const itemFactoriesMap = new Map();
+	function add(itemName, factoryName, itemFactory) {
+	    remove(itemName, factoryName);
+	    if (itemFactoriesMap.get(itemName) == undefined) {
+	        itemFactoriesMap.set(itemName, new Map());
+	    }
+	    itemFactoriesMap.get(itemName).set(factoryName, itemFactory);
+	    return itemFactory;
+	}
+	exports.add = add;
+	function remove(itemName, factoryName) {
+	    const itemFactory = get(itemName, factoryName);
+	    if (itemFactory != undefined) {
+	        if (itemFactoriesMap.get(itemName) == undefined) {
+	            itemFactoriesMap.get(itemName).delete(factoryName);
+	        }
+	        if (itemFactoriesMap.get(itemName).size === 0) {
+	            itemFactoriesMap.delete(itemName);
+	        }
+	    }
+	}
+	exports.remove = remove;
+	function get(itemName, factoryName) {
+	    if (itemFactoriesMap.get(itemName) != undefined) {
+	        return itemFactoriesMap.get(itemName).get(factoryName);
+	    }
+	}
+	exports.get = get;
+	function forEach(callback) {
+	    for (let [itemName, itemFactories] of itemFactoriesMap.entries()) {
+	        if (callback(itemName, itemFactories)) {
+	            break;
+	        }
+	    }
+	}
+	exports.forEach = forEach;
+
+
+/***/ },
+/* 14 */
+/***/ function(module, exports) {
+
+	"use strict";
+	let localInventoryWindow;
+	function set(inventoryWindow) {
+	    localInventoryWindow = inventoryWindow;
+	}
+	exports.set = set;
+	function get() {
+	    return localInventoryWindow;
+	}
+	exports.get = get;
+	function exists() {
+	    return localInventoryWindow != undefined;
+	}
+	exports.exists = exists;
+
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
 	function __export(m) {
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
-	__export(__webpack_require__(13));
-	__export(__webpack_require__(15));
+	__export(__webpack_require__(16));
 	__export(__webpack_require__(18));
-	__export(__webpack_require__(19));
 	__export(__webpack_require__(20));
 	__export(__webpack_require__(21));
 	__export(__webpack_require__(22));
 	__export(__webpack_require__(23));
 	__export(__webpack_require__(24));
 	__export(__webpack_require__(25));
+	__export(__webpack_require__(26));
+	__export(__webpack_require__(27));
 
 
 /***/ },
-/* 13 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const labels = __webpack_require__(14);
+	const labels = __webpack_require__(17);
 	class FoodItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1326,7 +1418,7 @@
 
 
 /***/ },
-/* 14 */
+/* 17 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1361,13 +1453,13 @@
 
 
 /***/ },
-/* 15 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(13);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const foodItem_1 = __webpack_require__(16);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class AppleItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1388,7 +1480,7 @@
 
 
 /***/ },
-/* 16 */
+/* 19 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1401,56 +1493,13 @@
 
 
 /***/ },
-/* 17 */
-/***/ function(module, exports) {
-
-	"use strict";
-	const itemFactoriesMap = new Map();
-	function add(itemName, factoryName, itemFactory) {
-	    remove(itemName, factoryName);
-	    if (itemFactoriesMap.get(itemName) === undefined) {
-	        itemFactoriesMap.set(itemName, new Map());
-	    }
-	    itemFactoriesMap.get(itemName).set(factoryName, itemFactory);
-	    return itemFactory;
-	}
-	exports.add = add;
-	function remove(itemName, factoryName) {
-	    const itemFactory = get(itemName, factoryName);
-	    if (itemFactory !== undefined) {
-	        if (itemFactoriesMap.get(itemName) === undefined) {
-	            itemFactoriesMap.get(itemName).delete(factoryName);
-	        }
-	        if (itemFactoriesMap.get(itemName).size === 0) {
-	            itemFactoriesMap.delete(itemName);
-	        }
-	    }
-	}
-	exports.remove = remove;
-	function get(itemName, factoryName) {
-	    if (itemFactoriesMap.get(itemName) !== undefined) {
-	        return itemFactoriesMap.get(itemName).get(factoryName);
-	    }
-	}
-	exports.get = get;
-	function forEach(callback) {
-	    for (let [itemName, itemFactories] of itemFactoriesMap.entries()) {
-	        if (callback(itemName, itemFactories)) {
-	            break;
-	        }
-	    }
-	}
-	exports.forEach = forEach;
-
-
-/***/ },
-/* 18 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(13);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const foodItem_1 = __webpack_require__(16);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class RavelloBeansItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1471,13 +1520,13 @@
 
 
 /***/ },
-/* 19 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(13);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const foodItem_1 = __webpack_require__(16);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class LaisChipsItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1501,13 +1550,13 @@
 
 
 /***/ },
-/* 20 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(13);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const foodItem_1 = __webpack_require__(16);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class SnikersItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1527,13 +1576,13 @@
 
 
 /***/ },
-/* 21 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(13);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const foodItem_1 = __webpack_require__(16);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class MilkGallonItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1556,13 +1605,13 @@
 
 
 /***/ },
-/* 22 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(13);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const foodItem_1 = __webpack_require__(16);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class WaterBottleItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1584,13 +1633,13 @@
 
 
 /***/ },
-/* 23 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(13);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const foodItem_1 = __webpack_require__(16);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class FirstAidKitItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1611,13 +1660,13 @@
 
 
 /***/ },
-/* 24 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(13);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const foodItem_1 = __webpack_require__(16);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class BandageItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1638,13 +1687,13 @@
 
 
 /***/ },
-/* 25 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(13);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const foodItem_1 = __webpack_require__(16);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class PillsItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1664,30 +1713,30 @@
 
 
 /***/ },
-/* 26 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	function __export(m) {
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
-	__export(__webpack_require__(27));
-	__export(__webpack_require__(28));
 	__export(__webpack_require__(29));
 	__export(__webpack_require__(30));
 	__export(__webpack_require__(31));
+	__export(__webpack_require__(32));
+	__export(__webpack_require__(33));
 
 
 /***/ },
-/* 27 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const itemFactory_1 = __webpack_require__(16);
+	const itemFactory_1 = __webpack_require__(19);
 	const inventoryWindow_1 = __webpack_require__(3);
 	const vector2Grid_1 = __webpack_require__(7);
-	const itemFactoryManager = __webpack_require__(17);
+	const itemFactoryManager = __webpack_require__(13);
 	const windowManager = __webpack_require__(10);
 	class BackpackItem extends item_1.Item {
 	    constructor() {
@@ -1715,13 +1764,13 @@
 
 
 /***/ },
-/* 28 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class BavariumWingsuitItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1743,13 +1792,13 @@
 
 
 /***/ },
-/* 29 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class GasCanItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1770,13 +1819,13 @@
 
 
 /***/ },
-/* 30 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class GrapplingHookItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1796,13 +1845,13 @@
 
 
 /***/ },
-/* 31 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class MapItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1822,26 +1871,26 @@
 
 
 /***/ },
-/* 32 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	function __export(m) {
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
-	__export(__webpack_require__(33));
-	__export(__webpack_require__(34));
 	__export(__webpack_require__(35));
 	__export(__webpack_require__(36));
+	__export(__webpack_require__(37));
+	__export(__webpack_require__(38));
 
 
 /***/ },
-/* 33 */
+/* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const labels = __webpack_require__(14);
+	const labels = __webpack_require__(17);
 	class VehicleRepairItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1861,13 +1910,13 @@
 
 
 /***/ },
-/* 34 */
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const vehicleRepairItem_1 = __webpack_require__(33);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const vehicleRepairItem_1 = __webpack_require__(35);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class SmallWrenchItem extends vehicleRepairItem_1.VehicleRepairItem {
 	    constructor() {
 	        super();
@@ -1887,13 +1936,13 @@
 
 
 /***/ },
-/* 35 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const vehicleRepairItem_1 = __webpack_require__(33);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const vehicleRepairItem_1 = __webpack_require__(35);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class BigWrenchItem extends vehicleRepairItem_1.VehicleRepairItem {
 	    constructor() {
 	        super();
@@ -1913,13 +1962,13 @@
 
 
 /***/ },
-/* 36 */
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const vehicleRepairItem_1 = __webpack_require__(33);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const vehicleRepairItem_1 = __webpack_require__(35);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class ToolboxItem extends vehicleRepairItem_1.VehicleRepairItem {
 	    constructor() {
 	        super();
@@ -1940,24 +1989,24 @@
 
 
 /***/ },
-/* 37 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	function __export(m) {
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
-	__export(__webpack_require__(38));
+	__export(__webpack_require__(40));
 
 
 /***/ },
-/* 38 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const itemFactory_1 = __webpack_require__(16);
-	const itemFactoryManager = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(19);
+	const itemFactoryManager = __webpack_require__(13);
 	class U39PlechovkaItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1977,7 +2026,7 @@
 
 
 /***/ },
-/* 39 */
+/* 41 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -2012,59 +2061,27 @@
 
 
 /***/ },
-/* 40 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const vector2Grid_1 = __webpack_require__(7);
+	const adminWindow_1 = __webpack_require__(43);
 	const inventoryWindow_1 = __webpack_require__(3);
+	const vector2Grid_1 = __webpack_require__(7);
+	const localInventoryWindow = __webpack_require__(14);
 	const windowManager = __webpack_require__(10);
-	const itemManager = __webpack_require__(8);
-	const itemFactoryManager = __webpack_require__(17);
-	if (typeof jcmp !== "undefined") {
-	    jcmp.AddEvent("jc3mp-inventory/ui/sendInventory", (inventoryData) => {
-	        inventoryData = JSON.parse(inventoryData);
-	        let inventoryWindow = windowManager.get(inventoryData.uniqueName);
-	        if (inventoryWindow === undefined) {
-	            inventoryWindow = new inventoryWindow_1.InventoryWindow(inventoryData.uniqueName, new vector2Grid_1.Vector2Grid(inventoryData.size.cols, inventoryData.size.rows));
-	            windowManager.add(inventoryData.uniqueName, inventoryWindow);
-	        }
-	        if (inventoryData.isLocal) {
-	            inventoryWindow_1.setLocalInventoryWindow(inventoryWindow);
-	        }
-	    });
-	    jcmp.AddEvent("jc3mp-inventory/ui/sendItems", (itemsData) => {
-	        itemsData = JSON.parse(itemsData);
-	        itemsData.forEach((itemData, itemDataIndex) => {
-	            let item = itemManager.getByID(itemData.id);
-	            if (item === undefined) {
-	                const constructors = itemFactoryManager.get(itemData.type, "default");
-	                const constructor = constructors !== undefined ? constructors[0] : undefined;
-	                if (constructor === undefined) {
-	                    console.log(`[jc3mp-inventory] Error: Item type (${itemData.type}) does not have a default factory in the item factory manager`);
-	                }
-	                else {
-	                    item = constructor();
-	                    item.id = itemData.id;
-	                    item.rotation = itemData.rotation;
-	                    item.isFlipped = itemData.isFlipped;
-	                    item.updateSlots();
-	                    itemManager.add(item);
-	                }
-	            }
-	            if (itemData.inventoryUniqueName !== undefined) {
-	                const inventoryWindow = windowManager.get(itemData.inventoryUniqueName);
-	                if (inventoryWindow !== undefined) {
-	                    if (item.inventoryWindow !== undefined) {
-	                        item.inventoryWindow.removeItem(item);
-	                    }
-	                    item.rotation = itemData.rotation;
-	                    item.isFlipped = itemData.isFlipped;
-	                    item.updateSlots();
-	                    inventoryWindow.addItem(item, new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows));
-	                }
-	            }
-	        });
+	const network = __webpack_require__(12);
+	if (typeof jcmp == "undefined") {
+	    let inventoryWindow = new inventoryWindow_1.InventoryWindow("Inventory", new vector2Grid_1.Vector2Grid(18, 12));
+	    windowManager.add("local", inventoryWindow);
+	    localInventoryWindow.set(inventoryWindow);
+	}
+	let adminWindow = new adminWindow_1.AdminWindow("Items");
+	windowManager.add("adminWindow", adminWindow);
+	let chatIsOpen = false;
+	if (typeof jcmp != "undefined") {
+	    jcmp.AddEvent("chat_input_state", function (state) {
+	        chatIsOpen = state;
 	    });
 	    jcmp.AddEvent("jc3mp-inventory/ui/windowVisibilityChanged", (uniqueName, isVisible) => {
 	        if (isVisible) {
@@ -2074,21 +2091,46 @@
 	            jcmp.HideCursor();
 	        }
 	        if (!windowManager.isAnyWindowVisible()) {
-	            inventoryWindow_1.sendNetworkChanges();
+	            network.sendChanges();
 	        }
 	    });
 	}
+	$(document).on("keydown", (event) => {
+	    if (!chatIsOpen) {
+	        switch (event.which) {
+	            case 73:
+	                if (localInventoryWindow.exists()) {
+	                    localInventoryWindow.get().toggle();
+	                }
+	                else {
+	                    network.requestLocalInventory();
+	                }
+	                break;
+	            case 79:
+	                adminWindow.toggle();
+	                break;
+	            default:
+	                return;
+	        }
+	    }
+	});
+	$.fn.disableSelection = function () {
+	    return this
+	        .attr("unselectable", "on")
+	        .css("user-select", "none")
+	        .on("selectstart", false);
+	};
 
 
 /***/ },
-/* 41 */
+/* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const window_1 = __webpack_require__(4);
 	const vector2_1 = __webpack_require__(6);
 	const itemManager = __webpack_require__(8);
-	const itemFactoryManager = __webpack_require__(17);
+	const itemFactoryManager = __webpack_require__(13);
 	class AdminWindow extends window_1.Window {
 	    constructor(titleHTML) {
 	        super(titleHTML);

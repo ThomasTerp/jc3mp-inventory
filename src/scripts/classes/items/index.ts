@@ -1,4 +1,9 @@
+"use strict";
+
+
 export * from "./item";
-export * from "./foodItem";
-export * from "./appleItem";
-export * from "./gasCanItem";
+
+export * from "./foods";
+export * from "./misc";
+export * from "./vehicles";
+export * from "./weapons";

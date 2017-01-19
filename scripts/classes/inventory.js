@@ -1,41 +1,41 @@
 "use strict";
-var inventorySlot_1 = require("./inventorySlot");
+var vector2Grid_1 = require("./vector2Grid");
 var Inventory = (function () {
-    function Inventory(size) {
-        this.uniqueName = null;
+    function Inventory(name, size) {
+        this.name = name;
         this.items = [];
         this.size = size;
         this.slots = [];
         this.createSlots();
     }
     Inventory.prototype.createSlots = function () {
-        for (var y = 0; y < this.size.y; y++) {
-            this.slots[y] = [];
-            for (var x = 0; x < this.size.x; x++) {
-                this.slots[y][x] = new inventorySlot_1.InventorySlot(this, new Vector2(x, y));
+        for (var rows = 0; rows < this.size.rows; rows++) {
+            this.slots[rows] = [];
+            for (var cols = 0; cols < this.size.cols; cols++) {
+                this.slots[rows][cols] = new InventorySlot(this, new vector2Grid_1.Vector2Grid(cols, rows));
             }
         }
     };
     Inventory.prototype.getSlot = function (position) {
-        return this.slots[position.y][position.x];
+        return this.slots[position.rows][position.cols];
     };
     Inventory.prototype.setSlotsItem = function (item) {
-        for (var y = 0; y < item.slots.length; y++) {
-            for (var x = 0; x < item.slots[y].length; x++) {
-                var isSolid = item.slots[y][x] == 1;
+        for (var rows = 0; rows < item.slots.length; rows++) {
+            for (var cols = 0; cols < item.slots[rows].length; cols++) {
+                var isSolid = item.slots[rows][cols] == 1;
                 if (isSolid) {
-                    var slot = this.getSlot(new Vector2(item.inventoryPosition.x + x, item.inventoryPosition.y + y));
+                    var slot = this.getSlot(new vector2Grid_1.Vector2Grid(item.inventoryPosition.cols + cols, item.inventoryPosition.rows + rows));
                     slot.item = item;
                 }
             }
         }
     };
     Inventory.prototype.unsetSlotsItem = function (item) {
-        for (var y = 0; y < item.slots.length; y++) {
-            for (var x = 0; x < item.slots[y].length; x++) {
-                var isSolid = item.slots[y][x] == 1;
+        for (var rows = 0; rows < item.slots.length; rows++) {
+            for (var cols = 0; cols < item.slots[rows].length; cols++) {
+                var isSolid = item.slots[rows][cols] == 1;
                 if (isSolid) {
-                    var slot = this.getSlot(new Vector2(item.inventoryPosition.x + x, item.inventoryPosition.y + y));
+                    var slot = this.getSlot(new vector2Grid_1.Vector2Grid(item.inventoryPosition.cols + cols, item.inventoryPosition.rows + rows));
                     slot.item = undefined;
                 }
             }
@@ -52,8 +52,8 @@ var Inventory = (function () {
     Inventory.prototype.removeItem = function (item) {
         if (this.hasItem(item)) {
             this.unsetSlotsItem(item);
-            item.inventory = null;
-            item.inventoryPosition = null;
+            item.inventory = undefined;
+            item.inventoryPosition = undefined;
             this.items.splice(this.items.indexOf(item), 1);
         }
     };
@@ -62,16 +62,16 @@ var Inventory = (function () {
     };
     Inventory.prototype.isItemWithinInventory = function (item, position) {
         var itemSize = item.getSize();
-        return position.x + itemSize.x <= this.size.x && position.y + itemSize.y <= this.size.y;
+        return position.cols + itemSize.cols <= this.size.cols && position.rows + itemSize.rows <= this.size.rows;
     };
     Inventory.prototype.canItemBePlaced = function (item, position) {
         var itemSize = item.getSize();
-        for (var y = 0; y < itemSize.y; y++) {
-            for (var x = 0; x < itemSize.x; x++) {
-                var isSolid = item.slots[y][x] == 1;
+        for (var rows = 0; rows < itemSize.rows; rows++) {
+            for (var cols = 0; cols < itemSize.cols; cols++) {
+                var isSolid = item.slots[rows][cols] === 1;
                 if (isSolid) {
-                    var slot = this.getSlot(new Vector2(position.x + x, position.y + y));
-                    if (slot.item) {
+                    var slot = this.getSlot(new vector2Grid_1.Vector2Grid(position.cols + cols, position.rows + rows));
+                    if (slot.item != undefined) {
                         return false;
                     }
                 }
@@ -82,3 +82,11 @@ var Inventory = (function () {
     return Inventory;
 }());
 exports.Inventory = Inventory;
+var InventorySlot = (function () {
+    function InventorySlot(inventoryWindow, position) {
+        this.inventory = inventoryWindow;
+        this.position = position;
+    }
+    return InventorySlot;
+}());
+exports.InventorySlot = InventorySlot;

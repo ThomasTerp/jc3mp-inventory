@@ -1,8 +1,8 @@
 "use strict";
-import {Item} from "./item";
+import {Item} from "./../item";
 
 
-abstract class FoodItem extends Item
+export abstract class FoodItem extends Item
 {
 	health: number;
 	hunger: number;
@@ -19,4 +19,3 @@ abstract class FoodItem extends Item
 		this.category = "Food";
 	}
 }
-export {FoodItem}

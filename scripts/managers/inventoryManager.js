@@ -10,7 +10,7 @@ exports.add = add;
 function remove(uniqueName) {
     var inventory = get(uniqueName);
     if (inventory) {
-        inventory.uniqueName = null;
+        inventory.uniqueName = undefined;
         inventoriesMap.delete(uniqueName);
     }
 }

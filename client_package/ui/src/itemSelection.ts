@@ -1,6 +1,7 @@
 "use strict";
 import {Item} from "./classes/items";
 import {InventoryWindow, InventorySlot} from "./classes/windows/inventoryWindow";
+import {Vector2} from "./classes/vector2";
 import {Vector2Grid} from "./classes/vector2Grid";
 import * as itemManager from "./managers/itemManager";
 import * as windowManager from "./managers/windowManager";

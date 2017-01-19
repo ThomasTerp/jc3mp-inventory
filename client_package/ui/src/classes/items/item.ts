@@ -72,7 +72,6 @@ export abstract class Item
 	{
 		this.createHTML();
 		
-		this.id = null;
 		this.rotation = 0;
 		this.isFlipped = false;
 		this.isSelected = false;

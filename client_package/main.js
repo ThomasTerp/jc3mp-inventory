@@ -46,15 +46,31 @@
 
 	"use strict";
 	__webpack_require__(1);
-	const ui = new WebUIWindow("jc3mp-inventory-ui", "package://jc3mp-inventory/ui/index.html", new Vector2(jcmp.viewportSize.x, jcmp.viewportSize.y));
-	ui.autoResize = true;
+	__webpack_require__(2);
+	__webpack_require__(3);
+
+
+/***/ },
+/* 1 */
+/***/ function(module, exports) {
+
+	"use strict";
+	exports.ui = new WebUIWindow("jc3mp-inventory-ui", "package://jc3mp-inventory/ui/index.html", new Vector2(jcmp.viewportSize.x, jcmp.viewportSize.y));
+	exports.ui.autoResize = true;
+
+
+/***/ },
+/* 2 */
+/***/ function(module, exports) {
+
+	"use strict";
 	jcmp.ui.AddEvent("jc3mp-inventory/ui/windowVisibilityChanged", (uniqueName, isVisible) => {
 	    jcmp.localPlayer.controlsEnabled = !isVisible;
 	});
 
 
 /***/ },
-/* 1 */
+/* 3 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -74,8 +90,11 @@
 	jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendItems", (itemsData) => {
 	    jcmp.ui.CallEvent("jc3mp-inventory/ui/sendItems", itemsData);
 	});
-	jcmp.ui.AddEvent("jc3mp-inventory/network/sendChanges", (changesData) => {
+	jcmp.ui.AddEvent("jc3mp-inventory/client/sendChanges", (changesData) => {
 	    sendChanges(JSON.parse(changesData));
+	});
+	jcmp.ui.AddEvent("jc3mp-inventory/client/requestLocalInventory", () => {
+	    jcmp.events.CallRemote("jc3mp-inventory/network/requestLocalInventory");
 	});
 
 

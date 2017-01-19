@@ -1,8 +1,9 @@
 "use strict";
 import redis = require("redis");
-import {Item} from "./classes/items"
-import {Inventory} from "./classes/inventory"
-import * as itemTypeManager from "./managers/itemTypeManager";
+import {Item} from "./classes/items";
+import {Inventory} from "./classes/inventory";
+import {Vector2Grid} from "./classes/vector2Grid";
+import * as itemFactoryManager from "./managers/itemFactoryManager";
 import * as inventoryManager from "./managers/inventoryManager";
 import * as itemManager from "./managers/itemManager";
 
@@ -16,7 +17,7 @@ client.on("error", function (err) {
 
 export function saveInventory(inventory: Inventory, saveItems: boolean, callback?: () => void)
 {
-	if(inventory.uniqueName === null)
+	if(inventory.uniqueName == undefined)
 	{
 		throw `[jc3mp-inventory] Redis database error: Inventory does not have an uniqueName`;
 	}
@@ -25,12 +26,33 @@ export function saveInventory(inventory: Inventory, saveItems: boolean, callback
 		Promise.all([
 			new Promise((resolve, reject) =>
 			{
-				client.hmset(`inventory:${inventory.uniqueName}:size`,
-					"x", inventory.size.x,
-					"y", inventory.size.y,
-					(err, reply) =>
+				client.hset(`inventory:${inventory.uniqueName}`, "name", inventory.name, (err, reply) =>
+				{
+					if(err != undefined)
+					{
+						reject(err);
+					}
+					else
 					{
 						resolve();
+					}
+				});
+			}),
+			new Promise((resolve, reject) =>
+			{
+				client.hmset(`inventory:${inventory.uniqueName}:size`,
+					"cols", inventory.size.cols,
+					"rows", inventory.size.rows,
+					(err, reply) =>
+					{
+						if(err != undefined)
+						{
+							reject(err);
+						}
+						else
+						{
+							resolve();
+						}
 					}
 				);
 			}),
@@ -52,18 +74,18 @@ export function saveInventory(inventory: Inventory, saveItems: boolean, callback
 		{
 			inventoryManager.add(inventory.uniqueName, inventory);
 			
-			if(callback !== undefined)
+			if(callback != undefined)
 			{
 				callback();
 			}
 		}).catch((err) =>
 		{
-			if(callback !== undefined)
+			if(callback != undefined)
 			{
 				callback();
 			}
 			
-			if(err !== undefined)
+			if(err != undefined)
 			{
 				console.log(err)
 			}
@@ -74,7 +96,7 @@ export function saveInventory(inventory: Inventory, saveItems: boolean, callback
 //Save all items in an inventory
 export function saveInventoryItems(inventory: Inventory, callback?: () => void)
 {
-	if(inventory.uniqueName === null)
+	if(inventory.uniqueName == undefined)
 	{
 		throw "[jc3mp-inventory] Redis database error: Inventory does not have an uniqueName";
 	}
@@ -107,18 +129,18 @@ export function saveInventoryItems(inventory: Inventory, callback?: () => void)
 			});
 		}).then(() =>
 		{
-			if(callback !== undefined)
+			if(callback != undefined)
 			{
 				callback();
 			}
 		}).catch((err) =>
 		{
-			if(callback !== undefined)
+			if(callback != undefined)
 			{
 				callback();
 			}
 			
-			if(err !== undefined)
+			if(err != undefined)
 			{
 				console.log(err)
 			}
@@ -128,27 +150,61 @@ export function saveInventoryItems(inventory: Inventory, callback?: () => void)
 
 export function loadInventory(uniqueName: string, loadItems: boolean, callback?: (inventory?: Inventory) => void)
 {
-	let inventory;
-	let size;
+	let inventory: Inventory;
+	let name: string;
+	let size: Vector2Grid;
 	
-	new Promise((resolve, reject) =>
-	{
-		client.hvals(`inventory:${uniqueName}:size`, (err, replies) =>
+	Promise.all([
+		new Promise((resolve, reject) =>
 		{
-			if(replies.length > 0)
+			client.hget(`inventory:${uniqueName}`, "name", (err, reply) =>
 			{
-				size = new Vector2(parseFloat(replies[0]), parseFloat(replies[1]));
 				
-				resolve();
-			}
-			else
+				if(err != undefined)
+				{
+					reject(err);
+				}
+				else
+				{
+					if(reply != undefined)
+					{
+						name = reply;
+						
+						resolve();
+					}
+					else
+					{
+						reject();
+					}
+				}
+			});
+		}),
+		new Promise((resolve, reject) =>
+		{
+			client.hvals(`inventory:${uniqueName}:size`, (err, replies) =>
 			{
-				reject();
-			}
-		});
-	}).then(() =>
+				if(err != undefined)
+				{
+					reject(err);
+				}
+				else
+				{
+					if(replies.length > 0)
+					{
+						size = new Vector2Grid(parseFloat(replies[0]), parseFloat(replies[1]));
+						
+						resolve();
+					}
+					else
+					{
+						reject();
+					}
+				}
+			});
+		})
+	]).then(() =>
 	{
-		inventory = new Inventory(size);
+		inventory = new Inventory(name, size);
 		inventoryManager.add(uniqueName, inventory);
 		
 		if(loadItems)
@@ -163,18 +219,18 @@ export function loadInventory(uniqueName: string, loadItems: boolean, callback?:
 		}
 	}).then(() =>
 	{
-		if(callback !== undefined)
+		if(callback != undefined)
 		{
 			callback(inventory);
 		}
 	}).catch((err) =>
 	{
-		if(callback !== undefined)
+		if(callback != undefined)
 		{
 			callback();
 		}
 		
-		if(err !== undefined)
+		if(err != undefined)
 		{
 			console.log(err)
 		}
@@ -183,7 +239,7 @@ export function loadInventory(uniqueName: string, loadItems: boolean, callback?:
 
 export function loadInventoryItems(inventory, callback: () => void)
 {
-	if(inventory.uniqueName == null)
+	if(inventory.uniqueName == undefined)
 	{
 		throw `[jc3mp-inventory] Redis database error: Inventory does not have an uniqueName`;
 	}
@@ -203,9 +259,11 @@ export function loadInventoryItems(inventory, callback: () => void)
 					{
 						loadItem(itemID, (item) =>
 						{
-							if(item === undefined)
+							if(item == undefined)
 							{
-								console.log(`[jc3mp-inventory] Redis database warning: Tried to load item (${itemID}) from inventory (${inventory.uniqueName}), but the item does not exist in the database`);
+								console.log(`[jc3mp-inventory] Redis database warning: Could not load item (${itemID}) from inventory (${inventory.uniqueName})`);
+								
+								reject();
 							}
 							else
 							{
@@ -222,18 +280,18 @@ export function loadInventoryItems(inventory, callback: () => void)
 			return Promise.all(itemLoadPromises);
 		}).then(() =>
 		{
-			if(callback !== undefined)
+			if(callback != undefined)
 			{
 				callback();
 			}
 		}).catch((err) =>
 		{
-			if(callback !== undefined)
+			if(callback != undefined)
 			{
 				callback();
 			}
 			
-			if(err !== undefined)
+			if(err != undefined)
 			{
 				console.log(err)
 			}
@@ -246,7 +304,7 @@ export function saveItem(item: Item, callback?: () => void)
 {
 	new Promise((resolve, reject) =>
 	{
-		if(item.id === null)
+		if(item.id == undefined)
 		{
 			client.incr("item:id", (err, reply) =>
 			{
@@ -263,7 +321,7 @@ export function saveItem(item: Item, callback?: () => void)
 	{
 		const promises = [];
 		
-		if(item.inventory !== null && item.inventoryPosition !== null)
+		if(item.inventory != undefined && item.inventoryPosition != undefined)
 		{
 			promises.push(
 				new Promise((resolve, reject) =>
@@ -271,7 +329,7 @@ export function saveItem(item: Item, callback?: () => void)
 					client.hmset(`item:${item.id}`,
 						"type", item.constructor.name,
 						"rotation", item.rotation,
-						"isFlipped", item.isFlipped,
+						"isFlipped", item.isFlipped ? 1: 0,
 						"inventoryUniqueName", item.inventory.uniqueName,
 						(err, reply) => {
 							resolve();
@@ -281,8 +339,8 @@ export function saveItem(item: Item, callback?: () => void)
 				new Promise((resolve, reject) =>
 				{
 					client.hmset(`item:${item.id}:inventoryPosition`,
-						"x", item.inventoryPosition.x,
-						"y", item.inventoryPosition.y,
+						"cols", item.inventoryPosition.cols,
+						"rows", item.inventoryPosition.rows,
 						(err, reply) => {
 							resolve();
 						}
@@ -298,7 +356,7 @@ export function saveItem(item: Item, callback?: () => void)
 					client.hmset(`item:${item.id}`,
 						"type", item.constructor.name,
 						"rotation", item.rotation,
-						"isFlipped", item.rotation,
+						"isFlipped", item.isFlipped ? 1 : 0,
 						(err, reply) =>
 						{
 							resolve();
@@ -313,25 +371,25 @@ export function saveItem(item: Item, callback?: () => void)
 	{
 		itemManager.add(item.id, item);
 		
-		if(callback !== undefined)
+		if(callback != undefined)
 		{
 			callback();
 		}
 	}).catch((err) =>
 	{
-		if(callback !== undefined)
+		if(callback != undefined)
 		{
 			callback();
 		}
 		
-		if(err !== undefined)
+		if(err != undefined)
 		{
 			console.log(err)
 		}
 	});;
 }
 
-//Get and construct an item from the database, inventory for the item has to be loaded or this function will return null.
+//Get and construct an item from the database
 //Item gets added to the item manager once its loaded
 export function loadItem(id: number, callback?: (item?: Item) => void): void
 {
@@ -341,7 +399,7 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 	let isFlipped: boolean;
 	let inventory: Inventory;
 	let inventoryUniqueName: string;
-	let inventoryPosition: Vector2;
+	let inventoryPosition: Vector2Grid;
 	
 	Promise.all([
 		new Promise((resolve, reject) =>
@@ -355,7 +413,7 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 					isFlipped = replies[2] === "1" ? true : false;
 					inventoryUniqueName = replies[3];
 					
-					if(inventoryUniqueName !== undefined)
+					if(inventoryUniqueName != undefined)
 					{
 						inventory = inventoryManager.get(inventoryUniqueName);
 					}
@@ -374,7 +432,7 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 			{
 				if(replies.length > 0)
 				{
-					inventoryPosition = new Vector2(parseFloat(replies[0]), parseFloat(replies[1]));
+					inventoryPosition = new Vector2Grid(parseFloat(replies[0]), parseFloat(replies[1]));
 					
 					resolve();
 				}
@@ -388,16 +446,15 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 	{
 		return new Promise((resolve, reject) =>
 		{
-			const constructors = itemTypeManager.get(type);
-			const constructor = constructors !== undefined ? constructors[0] : undefined;
+			const itemFactory = itemFactoryManager.get(type, "default");
 			
-			if(constructor === undefined)
+			if(itemFactory == undefined)
 			{
-				reject(`[jc3mp-inventory] Redis database error: Item type (${type}) does not have a constructor in the item type manager`);
+				reject(`[jc3mp-inventory] Redis database error: Item type (${type}) does not have a default factory in the item factory manager`);
 			}
 			else
 			{
-				item = constructor();
+				item = itemFactory.assemble();
 				item.rotation = rotation;
 				item.isFlipped = isFlipped;
 				
@@ -405,7 +462,7 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 				
 				itemManager.add(id, item);
 				
-				if(inventory !== undefined && inventoryPosition !== undefined)
+				if(inventory != undefined && inventoryPosition != undefined)
 				{
 					inventory.addItem(item, inventoryPosition)
 				}
@@ -415,18 +472,18 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 		});
 	}).then(() =>
 	{
-		if(callback !== undefined)
+		if(callback != undefined)
 		{
 			callback(item);
 		}
 	}).catch((err) =>
 	{
-		if(callback !== undefined)
+		if(callback != undefined)
 		{
 			callback();
 		}
 		
-		if(err !== undefined)
+		if(err != undefined)
 		{
 			console.log(err)
 		}
@@ -435,15 +492,15 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 
 export function loadItemInventory(item: Item, loadInventoryItems: boolean, callback?: (inventory?: Inventory) => void): void
 {
-	if(item.inventory === null || item.inventory.uniqueName === null)
+	if(item.inventory == undefined || item.inventory.uniqueName == undefined)
 	{
-		throw `[jc3mp-inventory] Redis database error: Item (${item.id !== null ? item.id : "NULL ID"}) does not have an inventory`;
+		throw `[jc3mp-inventory] Redis database error: Item (${item.id != undefined ? item.id : "NO ID"}) does not have an inventory`;
 	}
 	else
 	{
 		loadInventory(item.inventory.uniqueName, loadInventoryItems, (inventory) =>
 		{
-			if(callback !== undefined)
+			if(callback != undefined)
 			{
 				callback(inventory);
 			}
