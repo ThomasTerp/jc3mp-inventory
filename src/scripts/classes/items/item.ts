@@ -40,6 +40,11 @@ export abstract class Item
 		];
 	}
 	
+	destroy()
+	{
+		
+	}
+	
 	getDefaultSlotsClone(): number[][]
 	{
 		return util.cloneObject(this.defaultSlots);

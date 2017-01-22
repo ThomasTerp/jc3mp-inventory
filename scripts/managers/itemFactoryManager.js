@@ -10,11 +10,8 @@ function add(itemName, factoryName, itemFactory) {
 }
 exports.add = add;
 function remove(itemName, factoryName) {
-    var itemFactory = get(itemName, factoryName);
-    if (itemFactory != undefined) {
-        if (itemFactoriesMap.get(itemName) == undefined) {
-            itemFactoriesMap.get(itemName).delete(factoryName);
-        }
+    if (itemFactoriesMap.get(itemName) != undefined) {
+        itemFactoriesMap.get(itemName).delete(factoryName);
         if (itemFactoriesMap.get(itemName).size === 0) {
             itemFactoriesMap.delete(itemName);
         }

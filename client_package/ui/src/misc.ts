@@ -44,7 +44,7 @@ if(typeof jcmp != "undefined")
 		//Send inventory and item changes to server when all windows are closed
 		if(!windowManager.isAnyWindowVisible())
 		{
-			network.sendChanges();
+			network.sendItemOperations();
 		}
 	});
 }
@@ -61,10 +61,6 @@ $(document).on("keydown", (event) =>
 				if(localInventoryWindow.exists())
 				{
 					localInventoryWindow.get().toggle();
-				}
-				else
-				{
-					network.requestLocalInventory();
 				}
 				
 				break;

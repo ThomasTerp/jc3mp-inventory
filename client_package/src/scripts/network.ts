@@ -1,36 +1,27 @@
 "use strict";
 
 
-export function requestInventoryItems(inventoryUniqueName)
+export function sendItemOperations(itemOperationsData)
 {
-	jcmp.events.CallRemote("jc3mp-inventory/network/requestInventoryItems", inventoryUniqueName);
+	jcmp.events.CallRemote("jc3mp-inventory/network/itemOperations", JSON.stringify(itemOperationsData));
 }
 
-export function sendChanges(changesData)
+export function sendUIReady()
 {
-	jcmp.events.CallRemote("jc3mp-inventory/network/sendChanges", JSON.stringify(changesData));
+	jcmp.events.CallRemote("jc3mp-inventory/network/uiReady");
 }
 
-jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendInventory", (inventoryData) =>
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/inventoriesAndItemsData", (inventoryData) =>
 {
-	jcmp.ui.CallEvent("jc3mp-inventory/ui/sendInventory", inventoryData);
-	
-	inventoryData = JSON.parse(inventoryData);
-	
-	requestInventoryItems(inventoryData.uniqueName)
+	jcmp.ui.CallEvent("jc3mp-inventory/ui/inventoriesAndItemsData", inventoryData);
 });
 
-jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendItems", (itemsData) =>
+jcmp.ui.AddEvent("jc3mp-inventory/client/sendItemOperations", (itemOperationsData) =>
 {
-	jcmp.ui.CallEvent("jc3mp-inventory/ui/sendItems", itemsData);
+	sendItemOperations(JSON.parse(itemOperationsData))
 });
 
-jcmp.ui.AddEvent("jc3mp-inventory/client/sendChanges", (changesData) =>
+jcmp.ui.AddEvent("jc3mp-inventory/client/uiReady", () =>
 {
-	sendChanges(JSON.parse(changesData))
-});
-
-jcmp.ui.AddEvent("jc3mp-inventory/client/requestLocalInventory", () =>
-{
-	jcmp.events.CallRemote("jc3mp-inventory/network/requestLocalInventory");
+	sendUIReady();
 });

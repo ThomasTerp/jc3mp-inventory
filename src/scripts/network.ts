@@ -4,10 +4,11 @@ import {Inventory} from "./classes/inventory";
 import {Vector2Grid} from "./classes/vector2Grid";
 import * as inventoryManager from "./managers/inventoryManager";
 import * as itemManager from "./managers/itemManager";
+import * as itemFactoryManager from "./managers/itemFactoryManager";
 import * as database from "./database";
 
 
-export function sendInventory(player: Player, inventory: Inventory, isLocal: boolean = false): void
+export function sendInventory(player: Player, inventory: Inventory, includeItems = true, isLocal = false): void
 {
 	if(inventory.uniqueName == undefined)
 	{
@@ -15,7 +16,90 @@ export function sendInventory(player: Player, inventory: Inventory, isLocal: boo
 	}
 	else
 	{
-		const inventoryData = {
+		const data = {
+			inventories: [],
+		} as any;
+		
+		const inventoryData = convertInventoryToData(inventory);
+		
+		if(isLocal)
+		{
+			inventoryData.isLocal = true;
+		}
+		
+		data.inventories.push(inventoryData);
+		
+		if(includeItems)
+		{
+			data.items = [];
+			
+			inventory.items.forEach((item, itemIndex) =>
+			{
+				const itemData = convertItemToData(item);
+				
+				if(itemData != undefined)
+				{
+					data.items.push(itemData);
+				}
+			});
+		}
+		
+		jcmp.events.CallRemote("jc3mp-inventory/network/inventoriesAndItemsData", player, JSON.stringify(data));
+	}
+}
+
+export function sendItems(player: Player, items: Item[]): void
+{
+	const data = {
+		items: []
+	};
+	
+	items.forEach((item, itemIndex) =>
+	{
+		const itemData = convertItemToData(item);
+		
+		if(itemData != undefined)
+		{
+			data.items.push(itemData);
+		}
+	});
+	
+	jcmp.events.CallRemote("jc3mp-inventory/network/inventoriesAndItemsData", player, JSON.stringify(data));
+}
+
+/**
+ * Convert an item into data that can be used for sending to client.
+ * Returns undefined if item does not have an ID
+ */
+export function convertItemToData(item: Item): any
+{
+	if(item.id != undefined)
+	{
+		const itemData = {
+			type: item.constructor.name,
+			id: item.id,
+			rotation: item.rotation,
+			isFlipped: item.isFlipped,
+		} as any;
+		
+		if(item.inventory != undefined)
+		{
+			itemData.inventoryUniqueName = item.inventory.uniqueName;
+			itemData.inventoryPosition = {
+				cols: item.inventoryPosition.cols,
+				rows: item.inventoryPosition.rows
+			};
+		}
+		
+		return itemData;
+	}
+}
+
+export function convertInventoryToData(inventory: Inventory)
+{
+	if(inventory.uniqueName != undefined)
+	{
+		return {
 			uniqueName: inventory.uniqueName,
 			name: inventory.name,
 			size: {
@@ -23,100 +107,118 @@ export function sendInventory(player: Player, inventory: Inventory, isLocal: boo
 				rows: inventory.size.rows
 			}
 		} as any;
-		
-		if(isLocal)
-		{
-			inventoryData.isLocal = true;
-		}
-		
-		jcmp.events.CallRemote("jc3mp-inventory/network/sendInventory", player, JSON.stringify(inventoryData));
 	}
 }
 
-export function sendItems(player: Player, items: Item[]): void
+//Handle items being moved, dropped, used, etc
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", (player: Player, itemOperationsData: any) =>
 {
-	const itemsData = [];
+	itemOperationsData = JSON.parse(itemOperationsData);
+	const itemsToSendBack = [];
 	
-	items.forEach((item, itemIndex) =>
+	
+	/** Step 1: Put all items that will be moved into a map, these will be needed when setting slot states in the test inventories **/
+	
+	const moveItemsMap: Map<Item, boolean> = new Map();
+	
+	for(let itemOperationsDataIndex = 0; itemOperationsDataIndex < itemOperationsData.length; itemOperationsDataIndex++)
 	{
-		if(item.id != undefined)
+		const itemData = itemOperationsData[itemOperationsDataIndex];
+		
+		if(itemData.itemOperationType === "move" && itemData.id != undefined)
 		{
-			const itemData = {
-				type: item.constructor.name,
-				id: item.id,
-				rotation: item.rotation,
-				isFlipped: item.isFlipped,
-			} as any;
+			const item = itemManager.get(itemData.id);
 			
-			if(item.inventory != undefined)
+			if(item != undefined)
 			{
-				itemData.inventoryUniqueName = item.inventory.uniqueName;
-				itemData.inventoryPosition = {
-					cols: item.inventoryPosition.cols,
-					rows: item.inventoryPosition.rows
-				};
+				moveItemsMap.set(item, true);
 			}
-			
-			itemsData.push(itemData);
 		}
-	});
-	
-	jcmp.events.CallRemote("jc3mp-inventory/network/sendItems", player, JSON.stringify(itemsData));
-}
-
-jcmp.events.AddRemoteCallable("jc3mp-inventory/network/requestInventoryItems", (player, inventoryUniqueName) =>
-{
-	const inventory = inventoryManager.get(inventoryUniqueName);
-	
-	if(inventory != undefined)
-	{
-		sendItems(player, inventory.items);
 	}
-});
-
-jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", (player, changesData) =>
-{
-	if(player.inventory == undefined)
+	
+	/** Step 2: Create a test inventory for each inventory that is being used, the test inventory is only for testing if the item is placed in a valid position **/
+	
+	const testInventoriesMap: Map<string, Inventory> = new Map();
+	
+	for(let itemOperationsDataIndex = 0; itemOperationsDataIndex < itemOperationsData.length; itemOperationsDataIndex++)
 	{
-		console.log(`[jc3mp-inventory] Warning: Player "${player.client.name}" (${player.client.steamId} tried to make changes to their inventory, but they do not have an inventory`)
-	}
-	else
-	{
-		changesData = JSON.parse(changesData);
-		let resendInventory = false;
+		const itemData = itemOperationsData[itemOperationsDataIndex];
 		
-		for(let changesDataIndex = 0; changesDataIndex < changesData.length; changesDataIndex++)
+		if(itemData.inventoryUniqueName != undefined && itemData.inventoryPosition != undefined && testInventoriesMap.get(itemData.inventoryUniqueName) == undefined)
 		{
-			const changeData = changesData[changesDataIndex];
+			const inventory = inventoryManager.get(itemData.inventoryUniqueName);
 			
-			switch(changeData.changeType)
+			if(inventory != undefined)
 			{
-				case "move":
-					const item = itemManager.get(changeData.id);
+				const testInventory = new Inventory(inventory.name, inventory.size);
+				const itemDummy = {} as Item;
+				
+				//Put an item dummy on filled slots
+				for(let rows = 0; rows < testInventory.size.rows; rows++)
+				{
+					let log = "";
 					
-					if(item == undefined)
+					for(let cols = 0; cols < testInventory.size.cols; cols++)
 					{
-						console.log(`[jc3mp-inventory] Warning: Player "${player.client.name}" (${player.client.steamId} tried to move a non existing item`)
-						resendInventory = true;
+						const inventoryItem = inventory.slots[rows][cols].item;
 						
-						break;
-					}
-					
-					const newInventory = inventoryManager.get(changeData.inventoryUniqueName);
-					
-					if(newInventory != undefined)
-					{
-						if(item.inventory != undefined)
+						if(inventoryItem != undefined && moveItemsMap.get(inventoryItem) == undefined)
 						{
-							item.inventory.removeItem(item);
+							testInventory.slots[rows][cols].item = itemDummy;
 						}
 						
-						item.rotation = changeData.rotation;
-						item.isFlipped = changeData.isFlipped;
+						log += testInventory.slots[rows][cols].item == undefined ? "0" : "1";
+					}
+				}
+				
+				testInventoriesMap.set(itemData.inventoryUniqueName, testInventory);
+			}
+		}
+	}
+	
+	/** Step 3: Put the test items inside test the inventories, which is going to test if all the item operations are valid */
+	
+	let success = true;
+	
+	for(let itemOperationsDataIndex = 0; itemOperationsDataIndex < itemOperationsData.length; itemOperationsDataIndex++)
+	{
+		if(success)
+		{
+			const itemData = itemOperationsData[itemOperationsDataIndex];
+			
+			switch(itemData.itemOperationType)
+			{
+				case "move":
+					const item = itemManager.get(itemData.id);
+					
+					if(item != undefined)
+					{
+						const testInventory = testInventoriesMap.get(itemData.inventoryUniqueName);
+						const itemFactory = itemFactoryManager.get(item.constructor.name, "default");
 						
-						item.updateSlots();
-						
-						newInventory.addItem(item, new Vector2Grid(changeData.inventoryPosition.cols, changeData.inventoryPosition.rows));
+						if(itemFactory != undefined)
+						{
+							const inventoryPosition = new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
+							
+							const testItem = itemFactory.assemble();
+							testItem.rotation = itemData.rotation;
+							testItem.isFlipped = itemData.isFlipped;
+							
+							testItem.updateSlots();
+							
+							if(testInventory.isItemWithinInventory(testItem, inventoryPosition) && testInventory.canItemBePlaced(testItem, inventoryPosition))
+							{
+								testInventory.addItem(testItem, inventoryPosition);
+							}
+							else
+							{
+								success = false;
+							}
+						}
+						else
+						{
+							success = false;
+						}
 					}
 					
 					break;
@@ -126,6 +228,100 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", (player, ch
 					break;
 				
 				case "create":
+					const testInventory = testInventoriesMap.get(itemData.inventoryUniqueName);
+					const itemFactory = itemFactoryManager.get(itemData.type, "default");
+					
+					if(itemFactory != undefined)
+					{
+						const inventoryPosition = new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
+						
+						const testItem = itemFactory.assemble();
+						testItem.rotation = itemData.rotation;
+						testItem.isFlipped = itemData.isFlipped;
+						
+						testItem.updateSlots();
+						
+						if(testInventory.isItemWithinInventory(testItem, inventoryPosition) && testInventory.canItemBePlaced(testItem, inventoryPosition))
+						{
+							testInventory.addItem(testItem, inventoryPosition);
+						}
+						else
+						{
+							success = false;
+						}
+					}
+					else
+					{
+						success = false;
+					}
+					
+					break;
+			
+				case "dropCreate":
+					
+					break;
+			}
+		}
+	}
+	
+	if(success)
+	{
+		for(let itemOperationsDataIndex = 0; itemOperationsDataIndex < itemOperationsData.length; itemOperationsDataIndex++)
+		{
+			const itemData = itemOperationsData[itemOperationsDataIndex];
+			
+			switch(itemData.itemOperationType)
+			{
+				case "move":
+					(() =>
+					{
+						const destinationInventory = inventoryManager.get(itemData.inventoryUniqueName);
+						const destinationInventoryPosition = new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
+						
+						const item = itemManager.get(itemData.id);
+						
+						if(item.inventory != undefined)
+						{
+							item.inventory.removeItem(item);
+						}
+						
+						item.rotation = itemData.rotation;
+						item.isFlipped = itemData.isFlipped;
+						
+						item.updateSlots();
+						
+						destinationInventory.addItem(item, destinationInventoryPosition);
+					})();
+					
+					break;
+			
+				case "drop":
+					
+					break;
+				
+				case "create":
+					(() =>
+					{
+						const inventory = inventoryManager.get(itemData.inventoryUniqueName);
+						const inventoryPosition = new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
+						const itemFactory = itemFactoryManager.get(itemData.type, "default");
+						
+						if(itemFactory != undefined)
+						{
+							const item = itemFactory.assemble();
+							item.rotation = itemData.rotation;
+							item.isFlipped = itemData.isFlipped;
+							
+							item.updateSlots();
+							
+							inventory.addItem(item, inventoryPosition);
+							
+							if(item.inventory === player["inventory"])
+							{
+								itemsToSendBack.push(item);
+							}
+						}
+					})();
 					
 					break;
 			
@@ -135,14 +331,25 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendChanges", (player, ch
 			}
 		}
 		
-		database.saveInventory(player.inventory, true);
+		testInventoriesMap.forEach((testInventory, uniqueName) =>
+		{
+			const inventory = inventoryManager.get(uniqueName);
+			database.saveInventory(inventory, true, () =>
+			{
+				sendItems(player, itemsToSendBack);
+			});
+		});
+	}
+	else
+	{
+		console.log(`[jc3mp-inventory] Network error: Failed to validate item operations from player ${player.client.name} (${player.client.steamId})`)
 	}
 });
 
-jcmp.events.AddRemoteCallable("jc3mp-inventory/network/requestLocalInventory", (player) =>
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/uiReady", (player: Player) =>
 {
 	if(player["inventory"] != undefined)
 	{
-		sendInventory(player, player["inventory"], true);
+		sendInventory(player, player["inventory"], true, true);
 	}
-});
+})

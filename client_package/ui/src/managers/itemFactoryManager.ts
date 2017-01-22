@@ -24,20 +24,15 @@ export function add(itemName: string, factoryName: string, itemFactory: ItemFact
 /** Delete a ItemFactory from an item class */
 export function remove(itemName: string, factoryName: string): void
 {
-    const itemFactory = get(itemName, factoryName);
-	
-    if(itemFactory != undefined)
+	if(itemFactoriesMap.get(itemName) != undefined)
 	{
-		if(itemFactoriesMap.get(itemName) == undefined)
-		{
-        	itemFactoriesMap.get(itemName).delete(factoryName);
-		}
+    	itemFactoriesMap.get(itemName).delete(factoryName);
 		
 		if(itemFactoriesMap.get(itemName).size === 0)
 		{
 			itemFactoriesMap.delete(itemName);
 		}
-    }
+	}
 }
 
 /** Get a ItemFactory from an item class */

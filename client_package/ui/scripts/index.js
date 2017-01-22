@@ -46,10 +46,13 @@
 
 	"use strict";
 	__webpack_require__(1);
-	__webpack_require__(5);
 	__webpack_require__(9);
+	__webpack_require__(14);
 	__webpack_require__(41);
 	__webpack_require__(42);
+	if (typeof jcmp != "undefined") {
+	    jcmp.CallEvent("jc3mp-inventory/client/uiReady");
+	}
 
 
 /***/ },
@@ -73,9 +76,9 @@
 
 	"use strict";
 	const inventoryWindow_1 = __webpack_require__(3);
-	const vector2_1 = __webpack_require__(6);
-	const vector2Grid_1 = __webpack_require__(7);
-	const util = __webpack_require__(11);
+	const vector2_1 = __webpack_require__(5);
+	const vector2Grid_1 = __webpack_require__(6);
+	const util = __webpack_require__(7);
 	class Item {
 	    set src(value) {
 	        this._src = value;
@@ -116,6 +119,11 @@
 	            [1, 1],
 	        ];
 	    }
+	    destroy() {
+	        if (this.html != undefined) {
+	            this.html.remove();
+	        }
+	    }
 	    get tooltip() {
 	        return "<b>" + this.name + "</b><br />" + this.description;
 	    }
@@ -123,7 +131,7 @@
 	        return util.cloneObject(this.defaultSlots);
 	    }
 	    createHTML() {
-	        if (!this.html) {
+	        if (this.html == undefined) {
 	            this.html = $(`<img class="item" />`);
 	            this.html.data("item", this);
 	        }
@@ -247,12 +255,11 @@
 
 	"use strict";
 	const window_1 = __webpack_require__(4);
-	const itemDrag_1 = __webpack_require__(5);
-	const vector2_1 = __webpack_require__(6);
-	const vector2Grid_1 = __webpack_require__(7);
-	const util = __webpack_require__(11);
+	const vector2_1 = __webpack_require__(5);
+	const vector2Grid_1 = __webpack_require__(6);
+	const util = __webpack_require__(7);
 	const itemManager = __webpack_require__(8);
-	const network = __webpack_require__(12);
+	const network = __webpack_require__(10);
 	class InventoryWindow extends window_1.Window {
 	    constructor(titleHTML, size) {
 	        super(titleHTML);
@@ -336,24 +343,24 @@
 	                    let slot = this.getSlot(new vector2Grid_1.Vector2Grid(item.inventoryPosition.cols + cols, item.inventoryPosition.rows + rows));
 	                    slot.state = "empty";
 	                    slot.item = undefined;
-	                    itemDrag_1.ItemDrag.slotModifications.set(slot, slot.state);
 	                }
 	            }
 	        }
 	    }
 	    addItem(item, position) {
-	        if (!this.hasItem(item)) {
-	            this.items.push(item);
-	            item.createHTML();
-	            item.inventoryWindow = this;
-	            item.inventoryPosition = position;
-	            item.state = "inventory";
-	            this.updateItemHTMLPosition(item);
-	            item.html.css("pointer-events", "none");
-	            this.html.find(".items").append(item.html);
-	            this.setSlotsItem(item);
-	            network.addChange(itemManager.getItemIndex(item), "move");
+	        if (item.inventoryWindow != undefined) {
+	            item.inventoryWindow.removeItem(item);
 	        }
+	        this.items.push(item);
+	        item.createHTML();
+	        item.inventoryWindow = this;
+	        item.inventoryPosition = position;
+	        item.state = "inventory";
+	        this.updateItemHTMLPosition(item);
+	        item.html.css("pointer-events", "none");
+	        this.html.find(".items").append(item.html);
+	        this.setSlotsItem(item);
+	        network.addItemOperation(itemManager.getItemIndex(item), "move");
 	    }
 	    removeItem(item) {
 	        if (this.hasItem(item)) {
@@ -522,15 +529,232 @@
 
 /***/ },
 /* 5 */
+/***/ function(module, exports) {
+
+	"use strict";
+	class Vector2 {
+	    constructor(x = 0, y = 0) {
+	        this.x = x;
+	        this.y = y;
+	    }
+	}
+	exports.Vector2 = Vector2;
+
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	"use strict";
+	class Vector2Grid {
+	    constructor(cols = 0, rows = 0) {
+	        this.cols = cols;
+	        this.rows = rows;
+	    }
+	}
+	exports.Vector2Grid = Vector2Grid;
+
+
+/***/ },
+/* 7 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	const vector2_1 = __webpack_require__(5);
+	function mod(number, mod) {
+	    return ((number % mod) + mod) % mod;
+	}
+	exports.mod = mod;
+	;
+	function rotateMatrix(matrix, direction) {
+	    direction = mod(direction, 360) || 0;
+	    let transpose = function (m) {
+	        let result = new Array(m[0].length);
+	        for (let i = 0; i < m[0].length; i++) {
+	            result[i] = new Array(m.length - 1);
+	            for (let j = m.length - 1; j > -1; j--) {
+	                result[i][j] = m[j][i];
+	            }
+	        }
+	        return result;
+	    };
+	    let reverseRows = function (m) {
+	        return m.reverse();
+	    };
+	    let reverseCols = function (m) {
+	        for (let i = 0; i < m.length; i++) {
+	            m[i].reverse();
+	        }
+	        return m;
+	    };
+	    let rotate90Left = function (m) {
+	        m = transpose(m);
+	        m = reverseRows(m);
+	        return m;
+	    };
+	    let rotate90Right = function (m) {
+	        m = reverseRows(m);
+	        m = transpose(m);
+	        return m;
+	    };
+	    let rotate180 = function (m) {
+	        m = reverseCols(m);
+	        m = reverseRows(m);
+	        return m;
+	    };
+	    if (direction == 90 || direction == -270) {
+	        return rotate90Left(matrix);
+	    }
+	    else if (direction == -90 || direction == 270) {
+	        return rotate90Right(matrix);
+	    }
+	    else if (Math.abs(direction) == 180) {
+	        return rotate180(matrix);
+	    }
+	    return matrix;
+	}
+	exports.rotateMatrix = rotateMatrix;
+	;
+	function cloneObject(objectToClone) {
+	    let objectClone = (objectToClone instanceof Array) ? [] : {};
+	    for (let index in objectToClone) {
+	        if (index == 'clone') {
+	            continue;
+	        }
+	        if (objectToClone[index] && typeof objectToClone[index] == "object") {
+	            objectClone[index] = cloneObject(objectToClone[index]);
+	        }
+	        else {
+	            objectClone[index] = objectToClone[index];
+	        }
+	    }
+	    return objectClone;
+	}
+	exports.cloneObject = cloneObject;
+	;
+	function capitalizeFirstLetter(text) {
+	    return text.charAt(0).toUpperCase() + text.slice(1);
+	}
+	exports.capitalizeFirstLetter = capitalizeFirstLetter;
+	;
+	let cursorPosition = new vector2_1.Vector2(0, 0);
+	$(window).on("mousemove", (event) => {
+	    cursorPosition.x = event.pageX;
+	    cursorPosition.y = event.pageY;
+	});
+	function getCursorPosition() {
+	    return cursorPosition;
+	}
+	exports.getCursorPosition = getCursorPosition;
+	;
+	let isCtrlPressedBool = false;
+	$(window).on("keydown", (event) => {
+	    if (event.which == 17) {
+	        isCtrlPressedBool = true;
+	    }
+	});
+	$(window).on("keyup", (event) => {
+	    if (event.which == 17) {
+	        isCtrlPressedBool = false;
+	    }
+	});
+	function isCtrlPressed() {
+	    return isCtrlPressedBool;
+	}
+	exports.isCtrlPressed = isCtrlPressed;
+	;
+
+
+/***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	const itemDrag_1 = __webpack_require__(9);
+	const vector2_1 = __webpack_require__(5);
+	const itemSelection = __webpack_require__(14);
+	const itemsHTML = $("body > .items");
+	const items = [];
+	const itemsMap = new Map();
+	function startDragging(item, position) {
+	    if (!item.isSelected) {
+	        itemSelection.clearSelection();
+	        itemSelection.setSelectedHTML(item, true);
+	        itemSelection.selectedItems.set(item, true);
+	    }
+	    itemSelection.selectedItems.forEach((isSelected, item) => {
+	        if (isSelected) {
+	            let offset = item.html.offset();
+	            item.itemDrag = new itemDrag_1.ItemDrag(item, new vector2_1.Vector2(offset.left - position.x, offset.top - position.y));
+	        }
+	    });
+	}
+	exports.startDragging = startDragging;
+	function add(item) {
+	    remove(item);
+	    if (item.id != undefined) {
+	        itemsMap.set(item.id, item);
+	    }
+	    items.push(item);
+	    item.html.appendTo(itemsHTML);
+	    return item;
+	}
+	exports.add = add;
+	function remove(item) {
+	    if (exists(item)) {
+	        item.html.detach();
+	        if (item.id != undefined) {
+	            itemsMap.delete(item.id);
+	        }
+	        delete items[getItemIndex(item)];
+	    }
+	}
+	exports.remove = remove;
+	function getByID(id) {
+	    return itemsMap.get(id);
+	}
+	exports.getByID = getByID;
+	function getByItemIndex(itemIndex) {
+	    return items[itemIndex];
+	}
+	exports.getByItemIndex = getByItemIndex;
+	function getItemIndex(item) {
+	    return items.indexOf(item);
+	}
+	exports.getItemIndex = getItemIndex;
+	function exists(item) {
+	    if (getByID(item.id) != undefined) {
+	        return true;
+	    }
+	    if (getItemIndex(item) !== -1) {
+	        return true;
+	    }
+	    return false;
+	}
+	exports.exists = exists;
+	function forEach(callback) {
+	    for (var itemIndex = 0; itemIndex < items.length; itemIndex++) {
+	        const item = items[itemIndex];
+	        if (item != undefined && callback(itemIndex, item)) {
+	            break;
+	        }
+	    }
+	    ;
+	}
+	exports.forEach = forEach;
+
+
+/***/ },
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const inventoryWindow_1 = __webpack_require__(3);
-	const vector2_1 = __webpack_require__(6);
-	const vector2Grid_1 = __webpack_require__(7);
+	const vector2_1 = __webpack_require__(5);
+	const vector2Grid_1 = __webpack_require__(6);
 	const itemManager = __webpack_require__(8);
-	const network = __webpack_require__(12);
-	const util = __webpack_require__(11);
+	const network = __webpack_require__(10);
+	const util = __webpack_require__(7);
 	class ItemDrag {
 	    constructor(item, offset) {
 	        this.item = item;
@@ -622,7 +846,7 @@
 	    }
 	    startMove() {
 	        if (this.item.id != undefined) {
-	            network.addPreChange(itemManager.getItemIndex(this.item), {
+	            network.addPreItemOperation(itemManager.getItemIndex(this.item), {
 	                rotation: this.item.rotation,
 	                isFlipped: this.item.isFlipped,
 	                inventoryWindow: this.item.inventoryWindow,
@@ -667,11 +891,11 @@
 	                itemDrag.item.html.css({
 	                    "pointer-events": "auto",
 	                });
-	                network.addChange(itemIndex, "drop");
+	                network.addItemOperation(itemIndex, "drop");
 	            }
 	            else {
 	                slot.inventoryWindow.addItem(itemDrag.item, slot.position);
-	                network.addChange(itemIndex, "move");
+	                network.addItemOperation(itemIndex, "move");
 	            }
 	            itemDrag.item.state = "selected";
 	        }
@@ -717,123 +941,295 @@
 
 
 /***/ },
-/* 6 */
-/***/ function(module, exports) {
-
-	"use strict";
-	class Vector2 {
-	    constructor(x = 0, y = 0) {
-	        this.x = x;
-	        this.y = y;
-	    }
-	}
-	exports.Vector2 = Vector2;
-
-
-/***/ },
-/* 7 */
-/***/ function(module, exports) {
-
-	"use strict";
-	class Vector2Grid {
-	    constructor(cols = 0, rows = 0) {
-	        this.cols = cols;
-	        this.rows = rows;
-	    }
-	}
-	exports.Vector2Grid = Vector2Grid;
-
-
-/***/ },
-/* 8 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const itemDrag_1 = __webpack_require__(5);
-	const vector2_1 = __webpack_require__(6);
-	const itemSelection = __webpack_require__(9);
-	const itemsHTML = $("body > .items");
-	const items = [];
-	const itemsMap = new Map();
-	function startDragging(item, position) {
-	    if (!item.isSelected) {
-	        itemSelection.clearSelection();
-	        itemSelection.setSelectedHTML(item, true);
-	        itemSelection.selectedItems.set(item, true);
+	const inventoryWindow_1 = __webpack_require__(3);
+	const vector2Grid_1 = __webpack_require__(6);
+	const itemManager = __webpack_require__(8);
+	const windowManager = __webpack_require__(11);
+	const itemFactoryManager = __webpack_require__(12);
+	const localInventoryWindow = __webpack_require__(13);
+	const itemOperationsMap = new Map();
+	const preItemOperationsMap = new Map();
+	function addItemOperation(itemIndex, itemOperation) {
+	    itemOperationsMap.set(itemIndex, itemOperation);
+	}
+	exports.addItemOperation = addItemOperation;
+	function addPreItemOperation(itemIndex, preItemOperation) {
+	    preItemOperationsMap.set(itemIndex, preItemOperation);
+	}
+	exports.addPreItemOperation = addPreItemOperation;
+	function clearItemOperations() {
+	    itemOperationsMap.clear();
+	    preItemOperationsMap.clear();
+	}
+	exports.clearItemOperations = clearItemOperations;
+	function sendItemOperations() {
+	    const itemOperationsData = [];
+	    for (let [itemIndex, itemOperation] of itemOperationsMap.entries()) {
+	        const item = itemManager.getByItemIndex(itemIndex);
+	        console.log(itemIndex);
+	        if (item != undefined) {
+	            switch (itemOperation) {
+	                case "move":
+	                    if (item.id == undefined) {
+	                        const itemOperationData = {
+	                            itemOperationType: "create",
+	                            type: item.constructor.name,
+	                            rotation: item.rotation,
+	                            isFlipped: item.isFlipped
+	                        };
+	                        if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
+	                            itemOperationData.inventoryUniqueName = item.inventoryWindow.uniqueName,
+	                                itemOperationData.inventoryPosition = {
+	                                    cols: item.inventoryPosition.cols,
+	                                    rows: item.inventoryPosition.rows
+	                                };
+	                            item.inventoryWindow.removeItem(item);
+	                        }
+	                        itemManager.remove(item);
+	                        item.destroy();
+	                        itemOperationsData.push(itemOperationData);
+	                    }
+	                    else {
+	                        const preItemOperation = preItemOperationsMap.get(itemIndex);
+	                        if (preItemOperation != undefined) {
+	                            if (item.rotation !== preItemOperation.rotation ||
+	                                item.isFlipped !== preItemOperation.isFlipped ||
+	                                item.inventoryWindow !== preItemOperation.inventoryWindow ||
+	                                item.inventoryPosition !== preItemOperation.inventoryPosition) {
+	                                const itemOperationData = {
+	                                    itemOperationType: "move",
+	                                    id: item.id,
+	                                    rotation: item.rotation,
+	                                    isFlipped: item.isFlipped
+	                                };
+	                                if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
+	                                    itemOperationData.inventoryUniqueName = item.inventoryWindow.uniqueName,
+	                                        itemOperationData.inventoryPosition = {
+	                                            cols: item.inventoryPosition.cols,
+	                                            rows: item.inventoryPosition.rows
+	                                        };
+	                                }
+	                                itemOperationsData.push(itemOperationData);
+	                            }
+	                        }
+	                    }
+	                    break;
+	                case "drop":
+	                    if (item.id == undefined) {
+	                        itemOperationsData.push({
+	                            itemOperationType: "dropCreate",
+	                            type: item.constructor.name,
+	                        });
+	                    }
+	                    else {
+	                        itemOperationsData.push({
+	                            itemOperationType: "drop",
+	                            id: item.id
+	                        });
+	                    }
+	                    break;
+	            }
+	        }
 	    }
-	    itemSelection.selectedItems.forEach((isSelected, item) => {
-	        if (isSelected) {
-	            let offset = item.html.offset();
-	            item.itemDrag = new itemDrag_1.ItemDrag(item, new vector2_1.Vector2(offset.left - position.x, offset.top - position.y));
+	    if (itemOperationsData.length > 0) {
+	        if (typeof jcmp != "undefined") {
+	            jcmp.CallEvent("jc3mp-inventory/client/sendItemOperations", JSON.stringify(itemOperationsData));
+	        }
+	    }
+	    clearItemOperations();
+	}
+	exports.sendItemOperations = sendItemOperations;
+	if (typeof jcmp != "undefined") {
+	    jcmp.AddEvent("jc3mp-inventory/ui/inventoriesAndItemsData", (data) => {
+	        data = JSON.parse(data);
+	        if (data.inventories != undefined) {
+	            data.inventories.forEach((inventoryData, inventoryDataIndex) => {
+	                let inventoryWindow = windowManager.get(inventoryData.uniqueName);
+	                if (inventoryWindow == undefined) {
+	                    inventoryWindow = new inventoryWindow_1.InventoryWindow(inventoryData.name, new vector2Grid_1.Vector2Grid(inventoryData.size.cols, inventoryData.size.rows));
+	                    windowManager.add(inventoryData.uniqueName, inventoryWindow);
+	                }
+	                else {
+	                    inventoryWindow.titleHTML = inventoryData.name;
+	                }
+	                if (inventoryData.isLocal) {
+	                    localInventoryWindow.set(inventoryWindow);
+	                }
+	            });
+	        }
+	        if (data.items != undefined) {
+	            data.items.forEach((itemData, itemDataIndex) => {
+	                const item = itemManager.getByID(itemData.id);
+	                if (item != undefined && item.inventoryWindow != undefined) {
+	                    item.inventoryWindow.removeItem(item);
+	                }
+	            });
+	            data.items.forEach((itemData, itemDataIndex) => {
+	                let item = itemManager.getByID(itemData.id);
+	                if (item == undefined) {
+	                    const itemFactory = itemFactoryManager.get(itemData.type, "default");
+	                    if (itemFactory == undefined) {
+	                        console.log(`[jc3mp-inventory] Error: Item class (${itemData.type}) does not have a default factory in the item factory manager`);
+	                        return;
+	                    }
+	                    else {
+	                        item = itemFactory.assemble();
+	                        item.id = itemData.id;
+	                        itemManager.add(item);
+	                    }
+	                }
+	                item.rotation = itemData.rotation;
+	                item.isFlipped = itemData.isFlipped;
+	                item.updateSlots();
+	                if (itemData.inventoryUniqueName != undefined) {
+	                    const inventoryWindow = windowManager.get(itemData.inventoryUniqueName);
+	                    if (inventoryWindow != undefined) {
+	                        inventoryWindow.addItem(item, new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows));
+	                    }
+	                }
+	            });
+	        }
+	        if (data.inventories != undefined) {
+	            data.inventories.forEach((inventoryData, inventoryDataIndex) => {
+	                const inventoryWindow = windowManager.get(inventoryData.uniqueName);
+	                if (inventoryWindow != undefined) {
+	                    inventoryWindow.updateHTML();
+	                }
+	            });
 	        }
 	    });
 	}
-	exports.startDragging = startDragging;
-	function add(item) {
-	    remove(item);
-	    if (item.id != undefined) {
-	        itemsMap.set(item.id, item);
-	    }
-	    items.push(item);
-	    item.html.appendTo(itemsHTML);
-	    return item;
+
+
+/***/ },
+/* 11 */
+/***/ function(module, exports) {
+
+	"use strict";
+	const windowsHTML = $(".windows");
+	const windowsMap = new Map();
+	$(window).on("resize", (event) => {
+	    this.forEach((uniqueName, window) => {
+	        window.onResize();
+	    });
+	});
+	function add(uniqueName, window) {
+	    remove(uniqueName);
+	    window.uniqueName = uniqueName;
+	    windowsMap.set(uniqueName, window);
+	    window.html.appendTo(windowsHTML);
+	    return window;
 	}
 	exports.add = add;
-	function remove(item) {
-	    if (exists(item)) {
-	        item.html.detach();
-	        if (item.id != undefined) {
-	            itemsMap.delete(item.id);
-	        }
-	        items.splice(items.indexOf(item), 1);
+	function remove(uniqueName) {
+	    let window = get(uniqueName);
+	    if (window != undefined) {
+	        window.uniqueName = undefined;
+	        window.html.detach();
+	        windowsMap.delete(uniqueName);
 	    }
 	}
 	exports.remove = remove;
-	function getByID(id) {
-	    return itemsMap.get(id);
+	function get(uniqueName) {
+	    return windowsMap.get(uniqueName);
 	}
-	exports.getByID = getByID;
-	function getByItemIndex(itemIndex) {
-	    return items[itemIndex];
-	}
-	exports.getByItemIndex = getByItemIndex;
-	function getItemIndex(item) {
-	    return items.indexOf(item);
-	}
-	exports.getItemIndex = getItemIndex;
-	function exists(item) {
-	    if (getByID(item.id) != undefined) {
-	        return true;
-	    }
-	    if (items.indexOf(item) !== -1) {
-	        return true;
-	    }
-	    return false;
-	}
-	exports.exists = exists;
+	exports.get = get;
 	function forEach(callback) {
-	    for (var itemIndex = 0; itemIndex < items.length; itemIndex++) {
-	        const item = items[itemIndex];
-	        if (callback(itemIndex, item)) {
+	    for (let [uniqueName, window] of windowsMap.entries()) {
+	        if (callback(uniqueName, window)) {
 	            break;
 	        }
 	    }
-	    ;
+	}
+	exports.forEach = forEach;
+	function isAnyWindowVisible() {
+	    let isAnyWindowVisible = false;
+	    forEach((uniqueName, window) => {
+	        if (window.isVisible) {
+	            isAnyWindowVisible = true;
+	            return true;
+	        }
+	    });
+	    return isAnyWindowVisible;
+	}
+	exports.isAnyWindowVisible = isAnyWindowVisible;
+
+
+/***/ },
+/* 12 */
+/***/ function(module, exports) {
+
+	"use strict";
+	const itemFactoriesMap = new Map();
+	function add(itemName, factoryName, itemFactory) {
+	    remove(itemName, factoryName);
+	    if (itemFactoriesMap.get(itemName) == undefined) {
+	        itemFactoriesMap.set(itemName, new Map());
+	    }
+	    itemFactoriesMap.get(itemName).set(factoryName, itemFactory);
+	    return itemFactory;
+	}
+	exports.add = add;
+	function remove(itemName, factoryName) {
+	    if (itemFactoriesMap.get(itemName) != undefined) {
+	        itemFactoriesMap.get(itemName).delete(factoryName);
+	        if (itemFactoriesMap.get(itemName).size === 0) {
+	            itemFactoriesMap.delete(itemName);
+	        }
+	    }
+	}
+	exports.remove = remove;
+	function get(itemName, factoryName) {
+	    if (itemFactoriesMap.get(itemName) != undefined) {
+	        return itemFactoriesMap.get(itemName).get(factoryName);
+	    }
+	}
+	exports.get = get;
+	function forEach(callback) {
+	    for (let [itemName, itemFactories] of itemFactoriesMap.entries()) {
+	        if (callback(itemName, itemFactories)) {
+	            break;
+	        }
+	    }
 	}
 	exports.forEach = forEach;
 
 
 /***/ },
-/* 9 */
+/* 13 */
+/***/ function(module, exports) {
+
+	"use strict";
+	let localInventoryWindow;
+	function set(inventoryWindow) {
+	    localInventoryWindow = inventoryWindow;
+	}
+	exports.set = set;
+	function get() {
+	    return localInventoryWindow;
+	}
+	exports.get = get;
+	function exists() {
+	    return localInventoryWindow != undefined;
+	}
+	exports.exists = exists;
+
+
+/***/ },
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const inventoryWindow_1 = __webpack_require__(3);
-	const vector2_1 = __webpack_require__(6);
-	const vector2Grid_1 = __webpack_require__(7);
+	const vector2_1 = __webpack_require__(5);
+	const vector2Grid_1 = __webpack_require__(6);
 	const itemManager = __webpack_require__(8);
-	const windowManager = __webpack_require__(10);
-	const util = __webpack_require__(11);
+	const windowManager = __webpack_require__(11);
+	const util = __webpack_require__(7);
 	exports.selectingItems = new Map();
 	exports.selectedItems = new Map();
 	$("body").on("mousedown", (event) => {
@@ -982,389 +1378,6 @@
 
 
 /***/ },
-/* 10 */
-/***/ function(module, exports) {
-
-	"use strict";
-	const windowsHTML = $(".windows");
-	const windowsMap = new Map();
-	$(window).on("resize", (event) => {
-	    this.forEach((uniqueName, window) => {
-	        window.onResize();
-	    });
-	});
-	function add(uniqueName, window) {
-	    remove(uniqueName);
-	    window.uniqueName = uniqueName;
-	    windowsMap.set(uniqueName, window);
-	    window.html.appendTo(windowsHTML);
-	    return window;
-	}
-	exports.add = add;
-	function remove(uniqueName) {
-	    let window = get(uniqueName);
-	    if (window != undefined) {
-	        window.uniqueName = undefined;
-	        window.html.detach();
-	        windowsMap.delete(uniqueName);
-	    }
-	}
-	exports.remove = remove;
-	function get(uniqueName) {
-	    return windowsMap.get(uniqueName);
-	}
-	exports.get = get;
-	function forEach(callback) {
-	    for (let [uniqueName, window] of windowsMap.entries()) {
-	        if (callback(uniqueName, window)) {
-	            break;
-	        }
-	    }
-	}
-	exports.forEach = forEach;
-	function isAnyWindowVisible() {
-	    let isAnyWindowVisible = false;
-	    forEach((uniqueName, window) => {
-	        if (window.isVisible) {
-	            isAnyWindowVisible = true;
-	            return true;
-	        }
-	    });
-	    return isAnyWindowVisible;
-	}
-	exports.isAnyWindowVisible = isAnyWindowVisible;
-
-
-/***/ },
-/* 11 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	const vector2_1 = __webpack_require__(6);
-	function mod(number, mod) {
-	    return ((number % mod) + mod) % mod;
-	}
-	exports.mod = mod;
-	;
-	function rotateMatrix(matrix, direction) {
-	    direction = mod(direction, 360) || 0;
-	    let transpose = function (m) {
-	        let result = new Array(m[0].length);
-	        for (let i = 0; i < m[0].length; i++) {
-	            result[i] = new Array(m.length - 1);
-	            for (let j = m.length - 1; j > -1; j--) {
-	                result[i][j] = m[j][i];
-	            }
-	        }
-	        return result;
-	    };
-	    let reverseRows = function (m) {
-	        return m.reverse();
-	    };
-	    let reverseCols = function (m) {
-	        for (let i = 0; i < m.length; i++) {
-	            m[i].reverse();
-	        }
-	        return m;
-	    };
-	    let rotate90Left = function (m) {
-	        m = transpose(m);
-	        m = reverseRows(m);
-	        return m;
-	    };
-	    let rotate90Right = function (m) {
-	        m = reverseRows(m);
-	        m = transpose(m);
-	        return m;
-	    };
-	    let rotate180 = function (m) {
-	        m = reverseCols(m);
-	        m = reverseRows(m);
-	        return m;
-	    };
-	    if (direction == 90 || direction == -270) {
-	        return rotate90Left(matrix);
-	    }
-	    else if (direction == -90 || direction == 270) {
-	        return rotate90Right(matrix);
-	    }
-	    else if (Math.abs(direction) == 180) {
-	        return rotate180(matrix);
-	    }
-	    return matrix;
-	}
-	exports.rotateMatrix = rotateMatrix;
-	;
-	function cloneObject(objectToClone) {
-	    let objectClone = (objectToClone instanceof Array) ? [] : {};
-	    for (let index in objectToClone) {
-	        if (index == 'clone') {
-	            continue;
-	        }
-	        if (objectToClone[index] && typeof objectToClone[index] == "object") {
-	            objectClone[index] = cloneObject(objectToClone[index]);
-	        }
-	        else {
-	            objectClone[index] = objectToClone[index];
-	        }
-	    }
-	    return objectClone;
-	}
-	exports.cloneObject = cloneObject;
-	;
-	function capitalizeFirstLetter(text) {
-	    return text.charAt(0).toUpperCase() + text.slice(1);
-	}
-	exports.capitalizeFirstLetter = capitalizeFirstLetter;
-	;
-	let cursorPosition = new vector2_1.Vector2(0, 0);
-	$(window).on("mousemove", (event) => {
-	    cursorPosition.x = event.pageX;
-	    cursorPosition.y = event.pageY;
-	});
-	function getCursorPosition() {
-	    return cursorPosition;
-	}
-	exports.getCursorPosition = getCursorPosition;
-	;
-	let isCtrlPressedBool = false;
-	$(window).on("keydown", (event) => {
-	    if (event.which == 17) {
-	        isCtrlPressedBool = true;
-	    }
-	});
-	$(window).on("keyup", (event) => {
-	    if (event.which == 17) {
-	        isCtrlPressedBool = false;
-	    }
-	});
-	function isCtrlPressed() {
-	    return isCtrlPressedBool;
-	}
-	exports.isCtrlPressed = isCtrlPressed;
-	;
-
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	const inventoryWindow_1 = __webpack_require__(3);
-	const vector2Grid_1 = __webpack_require__(7);
-	const itemManager = __webpack_require__(8);
-	const windowManager = __webpack_require__(10);
-	const itemFactoryManager = __webpack_require__(13);
-	const localInventoryWindow = __webpack_require__(14);
-	const changesMap = new Map();
-	const preChangesMap = new Map();
-	function addChange(itemIndex, change) {
-	    changesMap.set(itemIndex, change);
-	}
-	exports.addChange = addChange;
-	function addPreChange(itemIndex, preChange) {
-	    preChangesMap.set(itemIndex, preChange);
-	}
-	exports.addPreChange = addPreChange;
-	function clearChanges() {
-	    changesMap.clear();
-	    preChangesMap.clear();
-	}
-	exports.clearChanges = clearChanges;
-	function sendChanges() {
-	    const changesData = [];
-	    for (let [itemIndex, change] of changesMap.entries()) {
-	        const item = itemManager.getByItemIndex(itemIndex);
-	        if (item != undefined) {
-	            const preChange = preChangesMap.get(itemIndex);
-	            if (preChange != undefined) {
-	                switch (change) {
-	                    case "move":
-	                        if (change === "move") {
-	                            if (item.id == undefined) {
-	                                const finalNetworkChange = {
-	                                    changeType: "create",
-	                                    type: item.constructor.name,
-	                                    rotation: item.rotation,
-	                                    isFlipped: item.isFlipped
-	                                };
-	                                if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
-	                                    finalNetworkChange.inventoryUniqueName = item.inventoryWindow.uniqueName,
-	                                        finalNetworkChange.inventoryPosition = {
-	                                            cols: item.inventoryPosition.cols,
-	                                            rows: item.inventoryPosition.rows
-	                                        };
-	                                }
-	                                changesData.push(finalNetworkChange);
-	                            }
-	                            else {
-	                                if (item.rotation !== preChange.rotation ||
-	                                    item.isFlipped !== preChange.isFlipped ||
-	                                    item.inventoryWindow !== preChange.inventoryWindow ||
-	                                    item.inventoryPosition !== preChange.inventoryPosition) {
-	                                    const finalNetworkChange = {
-	                                        changeType: "move",
-	                                        id: item.id,
-	                                        rotation: item.rotation,
-	                                        isFlipped: item.isFlipped
-	                                    };
-	                                    if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
-	                                        finalNetworkChange.inventoryUniqueName = item.inventoryWindow.uniqueName,
-	                                            finalNetworkChange.inventoryPosition = {
-	                                                cols: item.inventoryPosition.cols,
-	                                                rows: item.inventoryPosition.rows
-	                                            };
-	                                    }
-	                                    changesData.push(finalNetworkChange);
-	                                }
-	                            }
-	                        }
-	                        break;
-	                    case "drop":
-	                        if (item.id == undefined) {
-	                            changesData.push({
-	                                changeType: "dropCreate",
-	                                type: item.constructor.name,
-	                            });
-	                        }
-	                        else {
-	                            changesData.push({
-	                                changeType: "drop",
-	                                id: item.id
-	                            });
-	                        }
-	                        break;
-	                }
-	            }
-	        }
-	    }
-	    if (changesData.length > 0) {
-	        if (typeof jcmp != "undefined") {
-	            jcmp.CallEvent("jc3mp-inventory/client/sendChanges", JSON.stringify(changesData));
-	        }
-	    }
-	    clearChanges();
-	}
-	exports.sendChanges = sendChanges;
-	function requestLocalInventory() {
-	    jcmp.CallEvent("jc3mp-inventory/client/requestLocalInventory");
-	}
-	exports.requestLocalInventory = requestLocalInventory;
-	if (typeof jcmp != "undefined") {
-	    jcmp.AddEvent("jc3mp-inventory/ui/sendInventory", (inventoryData) => {
-	        inventoryData = JSON.parse(inventoryData);
-	        let inventoryWindow = windowManager.get(inventoryData.uniqueName);
-	        if (inventoryWindow == undefined) {
-	            inventoryWindow = new inventoryWindow_1.InventoryWindow(inventoryData.name, new vector2Grid_1.Vector2Grid(inventoryData.size.cols, inventoryData.size.rows));
-	            windowManager.add(inventoryData.uniqueName, inventoryWindow);
-	        }
-	        if (inventoryData.isLocal) {
-	            if (!localInventoryWindow.exists()) {
-	                inventoryWindow.show();
-	            }
-	            localInventoryWindow.set(inventoryWindow);
-	        }
-	    });
-	    jcmp.AddEvent("jc3mp-inventory/ui/sendItems", (itemsData) => {
-	        itemsData = JSON.parse(itemsData);
-	        itemsData.forEach((itemData, itemDataIndex) => {
-	            let item = itemManager.getByID(itemData.id);
-	            if (item == undefined) {
-	                const itemFactory = itemFactoryManager.get(itemData.type, "default");
-	                if (itemFactory == undefined) {
-	                    console.log(`[jc3mp-inventory] Error: Item class (${itemData.type}) does not have a default factory in the item factory manager`);
-	                    return;
-	                }
-	                else {
-	                    item = itemFactory.assemble();
-	                    item.id = itemData.id;
-	                    item.rotation = itemData.rotation;
-	                    item.isFlipped = itemData.isFlipped;
-	                    item.updateSlots();
-	                    itemManager.add(item);
-	                }
-	            }
-	            if (itemData.inventoryUniqueName != undefined) {
-	                const inventoryWindow = windowManager.get(itemData.inventoryUniqueName);
-	                if (inventoryWindow != undefined) {
-	                    if (item.inventoryWindow != undefined) {
-	                        item.inventoryWindow.removeItem(item);
-	                    }
-	                    item.rotation = itemData.rotation;
-	                    item.isFlipped = itemData.isFlipped;
-	                    item.updateSlots();
-	                    inventoryWindow.addItem(item, new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows));
-	                }
-	            }
-	        });
-	    });
-	}
-
-
-/***/ },
-/* 13 */
-/***/ function(module, exports) {
-
-	"use strict";
-	const itemFactoriesMap = new Map();
-	function add(itemName, factoryName, itemFactory) {
-	    remove(itemName, factoryName);
-	    if (itemFactoriesMap.get(itemName) == undefined) {
-	        itemFactoriesMap.set(itemName, new Map());
-	    }
-	    itemFactoriesMap.get(itemName).set(factoryName, itemFactory);
-	    return itemFactory;
-	}
-	exports.add = add;
-	function remove(itemName, factoryName) {
-	    const itemFactory = get(itemName, factoryName);
-	    if (itemFactory != undefined) {
-	        if (itemFactoriesMap.get(itemName) == undefined) {
-	            itemFactoriesMap.get(itemName).delete(factoryName);
-	        }
-	        if (itemFactoriesMap.get(itemName).size === 0) {
-	            itemFactoriesMap.delete(itemName);
-	        }
-	    }
-	}
-	exports.remove = remove;
-	function get(itemName, factoryName) {
-	    if (itemFactoriesMap.get(itemName) != undefined) {
-	        return itemFactoriesMap.get(itemName).get(factoryName);
-	    }
-	}
-	exports.get = get;
-	function forEach(callback) {
-	    for (let [itemName, itemFactories] of itemFactoriesMap.entries()) {
-	        if (callback(itemName, itemFactories)) {
-	            break;
-	        }
-	    }
-	}
-	exports.forEach = forEach;
-
-
-/***/ },
-/* 14 */
-/***/ function(module, exports) {
-
-	"use strict";
-	let localInventoryWindow;
-	function set(inventoryWindow) {
-	    localInventoryWindow = inventoryWindow;
-	}
-	exports.set = set;
-	function get() {
-	    return localInventoryWindow;
-	}
-	exports.get = get;
-	function exists() {
-	    return localInventoryWindow != undefined;
-	}
-	exports.exists = exists;
-
-
-/***/ },
 /* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -1459,7 +1472,7 @@
 	"use strict";
 	const foodItem_1 = __webpack_require__(16);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class AppleItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1499,7 +1512,7 @@
 	"use strict";
 	const foodItem_1 = __webpack_require__(16);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class RavelloBeansItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1526,7 +1539,7 @@
 	"use strict";
 	const foodItem_1 = __webpack_require__(16);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class LaisChipsItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1556,7 +1569,7 @@
 	"use strict";
 	const foodItem_1 = __webpack_require__(16);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class SnikersItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1582,7 +1595,7 @@
 	"use strict";
 	const foodItem_1 = __webpack_require__(16);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class MilkGallonItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1611,7 +1624,7 @@
 	"use strict";
 	const foodItem_1 = __webpack_require__(16);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class WaterBottleItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1639,7 +1652,7 @@
 	"use strict";
 	const foodItem_1 = __webpack_require__(16);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class FirstAidKitItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1666,7 +1679,7 @@
 	"use strict";
 	const foodItem_1 = __webpack_require__(16);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class BandageItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1693,7 +1706,7 @@
 	"use strict";
 	const foodItem_1 = __webpack_require__(16);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class PillsItem extends foodItem_1.FoodItem {
 	    constructor() {
 	        super();
@@ -1735,9 +1748,9 @@
 	const item_1 = __webpack_require__(2);
 	const itemFactory_1 = __webpack_require__(19);
 	const inventoryWindow_1 = __webpack_require__(3);
-	const vector2Grid_1 = __webpack_require__(7);
-	const itemFactoryManager = __webpack_require__(13);
-	const windowManager = __webpack_require__(10);
+	const vector2Grid_1 = __webpack_require__(6);
+	const itemFactoryManager = __webpack_require__(12);
+	const windowManager = __webpack_require__(11);
 	class BackpackItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1770,7 +1783,7 @@
 	"use strict";
 	const item_1 = __webpack_require__(2);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class BavariumWingsuitItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1798,7 +1811,7 @@
 	"use strict";
 	const item_1 = __webpack_require__(2);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class GasCanItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1825,7 +1838,7 @@
 	"use strict";
 	const item_1 = __webpack_require__(2);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class GrapplingHookItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1851,7 +1864,7 @@
 	"use strict";
 	const item_1 = __webpack_require__(2);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class MapItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1916,7 +1929,7 @@
 	"use strict";
 	const vehicleRepairItem_1 = __webpack_require__(35);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class SmallWrenchItem extends vehicleRepairItem_1.VehicleRepairItem {
 	    constructor() {
 	        super();
@@ -1942,7 +1955,7 @@
 	"use strict";
 	const vehicleRepairItem_1 = __webpack_require__(35);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class BigWrenchItem extends vehicleRepairItem_1.VehicleRepairItem {
 	    constructor() {
 	        super();
@@ -1968,7 +1981,7 @@
 	"use strict";
 	const vehicleRepairItem_1 = __webpack_require__(35);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class ToolboxItem extends vehicleRepairItem_1.VehicleRepairItem {
 	    constructor() {
 	        super();
@@ -2006,7 +2019,7 @@
 	"use strict";
 	const item_1 = __webpack_require__(2);
 	const itemFactory_1 = __webpack_require__(19);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class U39PlechovkaItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -2067,10 +2080,10 @@
 	"use strict";
 	const adminWindow_1 = __webpack_require__(43);
 	const inventoryWindow_1 = __webpack_require__(3);
-	const vector2Grid_1 = __webpack_require__(7);
-	const localInventoryWindow = __webpack_require__(14);
-	const windowManager = __webpack_require__(10);
-	const network = __webpack_require__(12);
+	const vector2Grid_1 = __webpack_require__(6);
+	const localInventoryWindow = __webpack_require__(13);
+	const windowManager = __webpack_require__(11);
+	const network = __webpack_require__(10);
 	if (typeof jcmp == "undefined") {
 	    let inventoryWindow = new inventoryWindow_1.InventoryWindow("Inventory", new vector2Grid_1.Vector2Grid(18, 12));
 	    windowManager.add("local", inventoryWindow);
@@ -2091,7 +2104,7 @@
 	            jcmp.HideCursor();
 	        }
 	        if (!windowManager.isAnyWindowVisible()) {
-	            network.sendChanges();
+	            network.sendItemOperations();
 	        }
 	    });
 	}
@@ -2101,9 +2114,6 @@
 	            case 73:
 	                if (localInventoryWindow.exists()) {
 	                    localInventoryWindow.get().toggle();
-	                }
-	                else {
-	                    network.requestLocalInventory();
 	                }
 	                break;
 	            case 79:
@@ -2128,9 +2138,9 @@
 
 	"use strict";
 	const window_1 = __webpack_require__(4);
-	const vector2_1 = __webpack_require__(6);
+	const vector2_1 = __webpack_require__(5);
 	const itemManager = __webpack_require__(8);
-	const itemFactoryManager = __webpack_require__(13);
+	const itemFactoryManager = __webpack_require__(12);
 	class AdminWindow extends window_1.Window {
 	    constructor(titleHTML) {
 	        super(titleHTML);

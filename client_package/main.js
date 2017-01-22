@@ -74,27 +74,22 @@
 /***/ function(module, exports) {
 
 	"use strict";
-	function requestInventoryItems(inventoryUniqueName) {
-	    jcmp.events.CallRemote("jc3mp-inventory/network/requestInventoryItems", inventoryUniqueName);
+	function sendItemOperations(itemOperationsData) {
+	    jcmp.events.CallRemote("jc3mp-inventory/network/itemOperations", JSON.stringify(itemOperationsData));
 	}
-	exports.requestInventoryItems = requestInventoryItems;
-	function sendChanges(changesData) {
-	    jcmp.events.CallRemote("jc3mp-inventory/network/sendChanges", JSON.stringify(changesData));
+	exports.sendItemOperations = sendItemOperations;
+	function sendUIReady() {
+	    jcmp.events.CallRemote("jc3mp-inventory/network/uiReady");
 	}
-	exports.sendChanges = sendChanges;
-	jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendInventory", (inventoryData) => {
-	    jcmp.ui.CallEvent("jc3mp-inventory/ui/sendInventory", inventoryData);
-	    inventoryData = JSON.parse(inventoryData);
-	    requestInventoryItems(inventoryData.uniqueName);
+	exports.sendUIReady = sendUIReady;
+	jcmp.events.AddRemoteCallable("jc3mp-inventory/network/inventoriesAndItemsData", (inventoryData) => {
+	    jcmp.ui.CallEvent("jc3mp-inventory/ui/inventoriesAndItemsData", inventoryData);
 	});
-	jcmp.events.AddRemoteCallable("jc3mp-inventory/network/sendItems", (itemsData) => {
-	    jcmp.ui.CallEvent("jc3mp-inventory/ui/sendItems", itemsData);
+	jcmp.ui.AddEvent("jc3mp-inventory/client/sendItemOperations", (itemOperationsData) => {
+	    sendItemOperations(JSON.parse(itemOperationsData));
 	});
-	jcmp.ui.AddEvent("jc3mp-inventory/client/sendChanges", (changesData) => {
-	    sendChanges(JSON.parse(changesData));
-	});
-	jcmp.ui.AddEvent("jc3mp-inventory/client/requestLocalInventory", () => {
-	    jcmp.events.CallRemote("jc3mp-inventory/network/requestLocalInventory");
+	jcmp.ui.AddEvent("jc3mp-inventory/client/uiReady", () => {
+	    sendUIReady();
 	});
 
 

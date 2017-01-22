@@ -15,7 +15,7 @@ if(typeof jcmp != "undefined")
 		{
 			if(inventory == undefined)
 			{
-				const playerInventory = player["inventory"] = new Inventory("Inventory", new Vector2Grid(10, 20));
+				const playerInventory = player["inventory"] = new Inventory("Inventory", new Vector2Grid(20, 14));
 				playerInventory.uniqueName = inventoryUniqueName;
 				
 				playerInventory.addItem(new items.AppleItem(), new Vector2Grid(0, 0));

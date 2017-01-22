@@ -88,6 +88,14 @@ export abstract class Item
 		];
 	}
 	
+	destroy()
+	{
+		if(this.html != undefined)
+		{
+			this.html.remove();
+		}
+	}
+	
 	get tooltip(): string
 	{
 		return "<b>" + this.name + "</b><br />" + this.description;
@@ -100,7 +108,7 @@ export abstract class Item
 	
 	createHTML(): JQuery
 	{
-		if(!this.html)
+		if(this.html == undefined)
 		{
 			this.html = $(`<img class="item" />`);
 			this.html.data("item", this);

@@ -8,7 +8,7 @@ if (typeof jcmp != "undefined") {
         var inventoryUniqueName = "player" + player.client.steamId;
         database.loadInventory(inventoryUniqueName, true, function (inventory) {
             if (inventory == undefined) {
-                var playerInventory = player["inventory"] = new inventory_1.Inventory("Inventory", new vector2Grid_1.Vector2Grid(10, 20));
+                var playerInventory = player["inventory"] = new inventory_1.Inventory("Inventory", new vector2Grid_1.Vector2Grid(20, 14));
                 playerInventory.uniqueName = inventoryUniqueName;
                 playerInventory.addItem(new items.AppleItem(), new vector2Grid_1.Vector2Grid(0, 0));
                 playerInventory.addItem(new items.GasCanItem(), new vector2Grid_1.Vector2Grid(1, 0));

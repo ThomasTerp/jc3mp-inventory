@@ -167,7 +167,7 @@ export class ItemDrag
 	{
 		if(this.item.id != undefined)
 		{
-			network.addPreChange(itemManager.getItemIndex(this.item), {
+			network.addPreItemOperation(itemManager.getItemIndex(this.item), {
 				rotation: this.item.rotation,
 				isFlipped: this.item.isFlipped,
 				inventoryWindow: this.item.inventoryWindow,
@@ -235,13 +235,13 @@ $(document.body).on("mouseup", (event) =>
 					"pointer-events": "auto",
 				});
 				
-				network.addChange(itemIndex, "drop");
+				network.addItemOperation(itemIndex, "drop");
 			}
 			else
 			{
 				slot.inventoryWindow.addItem(itemDrag.item, slot.position);
 				
-				network.addChange(itemIndex, "move");
+				network.addItemOperation(itemIndex, "move");
 			}
 			
 			itemDrag.item.state = "selected";

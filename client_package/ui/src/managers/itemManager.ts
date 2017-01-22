@@ -61,7 +61,7 @@ export function remove(item: Item): void
 	        itemsMap.delete(item.id);
 		}
 		
-		items.splice(items.indexOf(item), 1);
+		delete items[getItemIndex(item)];
     }
 }
 
@@ -88,7 +88,7 @@ export function exists(item: Item): boolean
 		return true;
 	}
 	
-	if(items.indexOf(item) !== -1)
+	if(getItemIndex(item) !== -1)
 	{
 		return true;
 	}
@@ -103,7 +103,7 @@ export function forEach(callback: (itemIndex: number, item: Item) => any): void
 	{
 		const item = items[itemIndex];
 		
-		if(callback(itemIndex, item))
+		if(item != undefined && callback(itemIndex, item))
 		{
             break;
         }

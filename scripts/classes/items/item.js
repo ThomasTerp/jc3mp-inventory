@@ -23,6 +23,8 @@ var Item = (function () {
         enumerable: true,
         configurable: true
     });
+    Item.prototype.destroy = function () {
+    };
     Item.prototype.getDefaultSlotsClone = function () {
         return util.cloneObject(this.defaultSlots);
     };

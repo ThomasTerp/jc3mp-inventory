@@ -150,7 +150,7 @@ export class InventoryWindow extends Window
 					slot.item = undefined;
 					
 					//Required for a rare bug
-					ItemDrag.slotModifications.set(slot, slot.state);
+					//ItemDrag.slotModifications.set(slot, slot.state);
 				}
 			}
 		}
@@ -158,26 +158,28 @@ export class InventoryWindow extends Window
 	
 	addItem(item: Item, position: Vector2Grid): void
 	{
-		if(!this.hasItem(item))
+		if(item.inventoryWindow != undefined)
 		{
-			this.items.push(item);
-			
-			item.createHTML();
-			
-			item.inventoryWindow = this;
-			item.inventoryPosition = position;
-			item.state = "inventory";
-			
-			this.updateItemHTMLPosition(item);
-			
-			item.html.css("pointer-events", "none");
-			
-			this.html.find(".items").append(item.html);
-			
-			this.setSlotsItem(item);
-			
-			network.addChange(itemManager.getItemIndex(item), "move");
+			item.inventoryWindow.removeItem(item);
 		}
+		
+		this.items.push(item);
+		
+		item.createHTML();
+		
+		item.inventoryWindow = this;
+		item.inventoryPosition = position;
+		item.state = "inventory";
+		
+		this.updateItemHTMLPosition(item);
+		
+		item.html.css("pointer-events", "none");
+		
+		this.html.find(".items").append(item.html);
+		
+		this.setSlotsItem(item);
+		
+		network.addItemOperation(itemManager.getItemIndex(item), "move");
 	}
 	
 	removeItem(item: Item): void
