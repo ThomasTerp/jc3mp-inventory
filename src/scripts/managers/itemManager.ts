@@ -3,44 +3,78 @@ import * as Util from "./../util";
 import {Item} from "./../classes/items";
 
 
+const items: Array<Item> = [];
 const itemsMap: Map<number, Item> = new Map();
 
 
-export function add(id: number, item: Item): Item
+export function add(item: Item): Item
 {
-	item.id = id;
+    remove(item);
 	
-    remove(id);
+	if(item.id != undefined)
+	{
+	    itemsMap.set(item.id, item);
+	}
 	
-    itemsMap.set(id, item);
+    items.push(item);
 	
     return item;
 }
 
-export function remove(id: number): void
+export function remove(item: Item): void
 {
-    let item = get(id);
-	
-    if(item)
+    if(exists(item))
 	{
-        itemsMap.delete(id);
+		if(item.id != undefined)
+		{
+	        itemsMap.delete(item.id);
+		}
+		
+		delete items[getItemIndex(item)];
     }
 }
-	
-//Get a window by its unique name
-export function get(id: number): Item
+
+/** Get a item by its id */
+export function getByID(id: number): Item
 {
     return itemsMap.get(id)
 }
 
-//Loop through all items, return true to break
-export function forEach(callback: (id: number, item: Item) => any): void
+export function getByItemIndex(itemIndex: number)
 {
-    for(let [id, item] of itemsMap.entries())
+	return items[itemIndex];
+}
+
+export function getItemIndex(item: Item)
+{
+	return items.indexOf(item);
+}
+
+export function exists(item: Item): boolean
+{
+	if(getByID(item.id) != undefined)
 	{
-        if(callback(id, item))
+		return true;
+	}
+	
+	if(getItemIndex(item) !== -1)
+	{
+		return true;
+	}
+	
+	return false;
+}
+
+/** Loop through all items, return true to break */
+export function forEach(callback: (itemIndex: number, item: Item) => any): void
+{
+	for(var itemIndex = 0; itemIndex < items.length; itemIndex++)
+	{
+		const item = items[itemIndex];
+		
+		if(item != undefined && callback(itemIndex, item))
 		{
             break;
         }
-    }
+	};
 }

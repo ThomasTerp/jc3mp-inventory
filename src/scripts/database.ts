@@ -369,7 +369,7 @@ export function saveItem(item: Item, callback?: () => void)
 		return Promise.all(promises);
 	}).then(() =>
 	{
-		itemManager.add(item.id, item);
+		itemManager.add(item);
 		
 		if(callback != undefined)
 		{
@@ -455,12 +455,12 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 			else
 			{
 				item = itemFactory.assemble();
+				item.id = id;
 				item.rotation = rotation;
 				item.isFlipped = isFlipped;
-				
 				item.updateSlots();
 				
-				itemManager.add(id, item);
+				itemManager.add(item);
 				
 				if(inventory != undefined && inventoryPosition != undefined)
 				{

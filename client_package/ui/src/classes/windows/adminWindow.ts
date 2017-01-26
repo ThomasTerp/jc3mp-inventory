@@ -3,6 +3,7 @@ import {Item} from "./../items/item";
 import {Window} from "./window";
 import {Vector2} from "./../vector2";
 import {ItemFactory} from "./../itemFactory";
+import * as network from "./../../network";
 import * as itemManager from "./../../managers/itemManager";
 import * as itemFactoryManager from "./../../managers/itemFactoryManager";
 
@@ -119,7 +120,12 @@ export class ItemCloner
 			
 			itemManager.add(item);
 			itemManager.startDragging(item, new Vector2(event.pageX, event.pageY));
+			
 			item.itemDrag.hasMoved = true;
+			item.itemDrag.onDropped = () =>
+			{
+				network.sendItemCreate(item);
+			}
 			
 			event.preventDefault();
 		});

@@ -35,12 +35,7 @@ export function sendInventory(player: Player, inventory: Inventory, includeItems
 			
 			inventory.items.forEach((item, itemIndex) =>
 			{
-				const itemData = convertItemToData(item);
-				
-				if(itemData != undefined)
-				{
-					data.items.push(itemData);
-				}
+				data.items.push(convertItemToData(item));
 			});
 		}
 		
@@ -56,12 +51,7 @@ export function sendItems(player: Player, items: Item[]): void
 	
 	items.forEach((item, itemIndex) =>
 	{
-		const itemData = convertItemToData(item);
-		
-		if(itemData != undefined)
-		{
-			data.items.push(itemData);
-		}
+		data.items.push(convertItemToData(item));
 	});
 	
 	jcmp.events.CallRemote("jc3mp-inventory/network/inventoriesAndItemsData", player, JSON.stringify(data));
@@ -73,26 +63,27 @@ export function sendItems(player: Player, items: Item[]): void
  */
 export function convertItemToData(item: Item): any
 {
+	const itemData = {
+		type: item.constructor.name,
+		rotation: item.rotation,
+		isFlipped: item.isFlipped,
+	} as any;
+	
 	if(item.id != undefined)
 	{
-		const itemData = {
-			type: item.constructor.name,
-			id: item.id,
-			rotation: item.rotation,
-			isFlipped: item.isFlipped,
-		} as any;
-		
-		if(item.inventory != undefined)
-		{
-			itemData.inventoryUniqueName = item.inventory.uniqueName;
-			itemData.inventoryPosition = {
-				cols: item.inventoryPosition.cols,
-				rows: item.inventoryPosition.rows
-			};
-		}
-		
-		return itemData;
+		itemData.id = item.id
 	}
+	
+	if(item.inventory != undefined && item.inventory.uniqueName != undefined)
+	{
+		itemData.inventoryUniqueName = item.inventory.uniqueName;
+		itemData.inventoryPosition = {
+			cols: item.inventoryPosition.cols,
+			rows: item.inventoryPosition.rows
+		};
+	}
+	
+	return itemData;
 }
 
 export function convertInventoryToData(inventory: Inventory)
@@ -127,7 +118,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", (player:
 		
 		if(itemData.itemOperationType === "move" && itemData.id != undefined)
 		{
-			const item = itemManager.get(itemData.id);
+			const item = itemManager.getByID(itemData.id);
 			
 			if(item != undefined)
 			{
@@ -189,7 +180,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", (player:
 			switch(itemData.itemOperationType)
 			{
 				case "move":
-					const item = itemManager.get(itemData.id);
+					const item = itemManager.getByID(itemData.id);
 					
 					if(item != undefined)
 					{
@@ -278,7 +269,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", (player:
 						const destinationInventory = inventoryManager.get(itemData.inventoryUniqueName);
 						const destinationInventoryPosition = new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
 						
-						const item = itemManager.get(itemData.id);
+						const item = itemManager.getByID(itemData.id);
 						
 						if(item.inventory != undefined)
 						{
@@ -294,38 +285,8 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", (player:
 					})();
 					
 					break;
-			
-				case "drop":
-					
-					break;
 				
-				case "create":
-					(() =>
-					{
-						const inventory = inventoryManager.get(itemData.inventoryUniqueName);
-						const inventoryPosition = new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
-						const itemFactory = itemFactoryManager.get(itemData.type, "default");
-						
-						if(itemFactory != undefined)
-						{
-							const item = itemFactory.assemble();
-							item.rotation = itemData.rotation;
-							item.isFlipped = itemData.isFlipped;
-							
-							item.updateSlots();
-							
-							inventory.addItem(item, inventoryPosition);
-							
-							if(item.inventory === player["inventory"])
-							{
-								itemsToSendBack.push(item);
-							}
-						}
-					})();
-					
-					break;
-			
-				case "dropCreate":
+				case "drop":
 					
 					break;
 			}
@@ -343,6 +304,43 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", (player:
 	else
 	{
 		console.log(`[jc3mp-inventory] Network error: Failed to validate item operations from player ${player.client.name} (${player.client.steamId})`)
+	}
+});
+
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemCreate", (player: Player, itemData: any) =>
+{
+	itemData = JSON.parse(itemData);
+	
+	const inventory = inventoryManager.get(itemData.inventoryUniqueName);
+	const inventoryPosition = new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
+	const itemFactory = itemFactoryManager.get(itemData.type, "default");
+	
+	if(itemFactory != undefined)
+	{
+		const item = itemFactory.assemble();
+		item.rotation = itemData.rotation;
+		item.isFlipped = itemData.isFlipped;
+		item.updateSlots();
+		
+		if(inventory.isItemWithinInventory(item, inventoryPosition) && inventory.canItemBePlaced(item, inventoryPosition))
+		{
+			itemManager.add(item);
+			inventory.addItem(item, inventoryPosition);
+		}
+		else
+		{
+			item.destroy();
+			
+			console.log(`[jc3mp-inventory] Network error: Inventory position data is invalid for creating item from player ${player.client.name} (${player.client.steamId})`)
+		}
+		
+		database.saveInventory(inventory, true, () =>
+		{
+			if(inventory === player["inventory"])
+			{
+				sendItems(player, [item]);
+			}
+		});
 	}
 });
 

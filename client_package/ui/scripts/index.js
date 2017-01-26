@@ -259,7 +259,6 @@
 	const vector2Grid_1 = __webpack_require__(6);
 	const util = __webpack_require__(7);
 	const itemManager = __webpack_require__(8);
-	const network = __webpack_require__(10);
 	class InventoryWindow extends window_1.Window {
 	    constructor(titleHTML, size) {
 	        super(titleHTML);
@@ -360,7 +359,6 @@
 	        item.html.css("pointer-events", "none");
 	        this.html.find(".items").append(item.html);
 	        this.setSlotsItem(item);
-	        network.addItemOperation(itemManager.getItemIndex(item), "move");
 	    }
 	    removeItem(item) {
 	        if (this.hasItem(item)) {
@@ -899,6 +897,9 @@
 	            }
 	            itemDrag.item.state = "selected";
 	        }
+	        if (itemDrag.onDropped != undefined) {
+	            itemDrag.onDropped();
+	        }
 	        delete itemDrag.item.itemDrag;
 	    });
 	});
@@ -970,67 +971,37 @@
 	    const itemOperationsData = [];
 	    for (let [itemIndex, itemOperation] of itemOperationsMap.entries()) {
 	        const item = itemManager.getByItemIndex(itemIndex);
-	        console.log(itemIndex);
-	        if (item != undefined) {
+	        if (item != undefined && item.id != undefined) {
 	            switch (itemOperation) {
 	                case "move":
-	                    if (item.id == undefined) {
-	                        const itemOperationData = {
-	                            itemOperationType: "create",
-	                            type: item.constructor.name,
-	                            rotation: item.rotation,
-	                            isFlipped: item.isFlipped
-	                        };
-	                        if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
-	                            itemOperationData.inventoryUniqueName = item.inventoryWindow.uniqueName,
-	                                itemOperationData.inventoryPosition = {
-	                                    cols: item.inventoryPosition.cols,
-	                                    rows: item.inventoryPosition.rows
-	                                };
-	                            item.inventoryWindow.removeItem(item);
-	                        }
-	                        itemManager.remove(item);
-	                        item.destroy();
-	                        itemOperationsData.push(itemOperationData);
-	                    }
-	                    else {
-	                        const preItemOperation = preItemOperationsMap.get(itemIndex);
-	                        if (preItemOperation != undefined) {
-	                            if (item.rotation !== preItemOperation.rotation ||
-	                                item.isFlipped !== preItemOperation.isFlipped ||
-	                                item.inventoryWindow !== preItemOperation.inventoryWindow ||
-	                                item.inventoryPosition !== preItemOperation.inventoryPosition) {
-	                                const itemOperationData = {
-	                                    itemOperationType: "move",
-	                                    id: item.id,
-	                                    rotation: item.rotation,
-	                                    isFlipped: item.isFlipped
-	                                };
-	                                if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
-	                                    itemOperationData.inventoryUniqueName = item.inventoryWindow.uniqueName,
-	                                        itemOperationData.inventoryPosition = {
-	                                            cols: item.inventoryPosition.cols,
-	                                            rows: item.inventoryPosition.rows
-	                                        };
-	                                }
-	                                itemOperationsData.push(itemOperationData);
+	                    const preItemOperation = preItemOperationsMap.get(itemIndex);
+	                    if (preItemOperation != undefined) {
+	                        if (item.rotation !== preItemOperation.rotation ||
+	                            item.isFlipped !== preItemOperation.isFlipped ||
+	                            item.inventoryWindow !== preItemOperation.inventoryWindow ||
+	                            item.inventoryPosition !== preItemOperation.inventoryPosition) {
+	                            const itemOperationData = {
+	                                itemOperationType: "move",
+	                                id: item.id,
+	                                rotation: item.rotation,
+	                                isFlipped: item.isFlipped
+	                            };
+	                            if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
+	                                itemOperationData.inventoryUniqueName = item.inventoryWindow.uniqueName,
+	                                    itemOperationData.inventoryPosition = {
+	                                        cols: item.inventoryPosition.cols,
+	                                        rows: item.inventoryPosition.rows
+	                                    };
 	                            }
+	                            itemOperationsData.push(itemOperationData);
 	                        }
 	                    }
 	                    break;
 	                case "drop":
-	                    if (item.id == undefined) {
-	                        itemOperationsData.push({
-	                            itemOperationType: "dropCreate",
-	                            type: item.constructor.name,
-	                        });
-	                    }
-	                    else {
-	                        itemOperationsData.push({
-	                            itemOperationType: "drop",
-	                            id: item.id
-	                        });
-	                    }
+	                    itemOperationsData.push({
+	                        itemOperationType: "drop",
+	                        id: item.id
+	                    });
 	                    break;
 	            }
 	        }
@@ -1043,6 +1014,25 @@
 	    clearItemOperations();
 	}
 	exports.sendItemOperations = sendItemOperations;
+	function sendItemCreate(item) {
+	    const itemData = {
+	        type: item.constructor.name,
+	        rotation: item.rotation,
+	        isFlipped: item.isFlipped
+	    };
+	    if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
+	        itemData.inventoryUniqueName = item.inventoryWindow.uniqueName,
+	            itemData.inventoryPosition = {
+	                cols: item.inventoryPosition.cols,
+	                rows: item.inventoryPosition.rows
+	            };
+	        item.inventoryWindow.removeItem(item);
+	    }
+	    itemManager.remove(item);
+	    item.destroy();
+	    jcmp.CallEvent("jc3mp-inventory/client/sendItemCreate", JSON.stringify(itemData));
+	}
+	exports.sendItemCreate = sendItemCreate;
 	if (typeof jcmp != "undefined") {
 	    jcmp.AddEvent("jc3mp-inventory/ui/inventoriesAndItemsData", (data) => {
 	        data = JSON.parse(data);
@@ -2139,6 +2129,7 @@
 	"use strict";
 	const window_1 = __webpack_require__(4);
 	const vector2_1 = __webpack_require__(5);
+	const network = __webpack_require__(10);
 	const itemManager = __webpack_require__(8);
 	const itemFactoryManager = __webpack_require__(12);
 	class AdminWindow extends window_1.Window {
@@ -2208,6 +2199,9 @@
 	            itemManager.add(item);
 	            itemManager.startDragging(item, new vector2_1.Vector2(event.pageX, event.pageY));
 	            item.itemDrag.hasMoved = true;
+	            item.itemDrag.onDropped = () => {
+	                network.sendItemCreate(item);
+	            };
 	            event.preventDefault();
 	        });
 	    }

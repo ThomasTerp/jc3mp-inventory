@@ -235,7 +235,7 @@ function saveItem(item, callback) {
         }
         return Promise.all(promises);
     }).then(function () {
-        itemManager.add(item.id, item);
+        itemManager.add(item);
         if (callback != undefined) {
             callback();
         }
@@ -295,10 +295,11 @@ function loadItem(id, callback) {
             }
             else {
                 item = itemFactory.assemble();
+                item.id = id;
                 item.rotation = rotation;
                 item.isFlipped = isFlipped;
                 item.updateSlots();
-                itemManager.add(id, item);
+                itemManager.add(item);
                 if (inventory != undefined && inventoryPosition != undefined) {
                     inventory.addItem(item, inventoryPosition);
                 }

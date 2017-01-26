@@ -1,29 +1,53 @@
 "use strict";
+var items = [];
 var itemsMap = new Map();
-function add(id, item) {
-    item.id = id;
-    remove(id);
-    itemsMap.set(id, item);
+function add(item) {
+    remove(item);
+    if (item.id != undefined) {
+        itemsMap.set(item.id, item);
+    }
+    items.push(item);
     return item;
 }
 exports.add = add;
-function remove(id) {
-    var item = get(id);
-    if (item) {
-        itemsMap.delete(id);
+function remove(item) {
+    if (exists(item)) {
+        if (item.id != undefined) {
+            itemsMap.delete(item.id);
+        }
+        delete items[getItemIndex(item)];
     }
 }
 exports.remove = remove;
-function get(id) {
+function getByID(id) {
     return itemsMap.get(id);
 }
-exports.get = get;
+exports.getByID = getByID;
+function getByItemIndex(itemIndex) {
+    return items[itemIndex];
+}
+exports.getByItemIndex = getByItemIndex;
+function getItemIndex(item) {
+    return items.indexOf(item);
+}
+exports.getItemIndex = getItemIndex;
+function exists(item) {
+    if (getByID(item.id) != undefined) {
+        return true;
+    }
+    if (getItemIndex(item) !== -1) {
+        return true;
+    }
+    return false;
+}
+exports.exists = exists;
 function forEach(callback) {
-    for (var _i = 0, _a = itemsMap.entries(); _i < _a.length; _i++) {
-        var _b = _a[_i], id = _b[0], item = _b[1];
-        if (callback(id, item)) {
+    for (var itemIndex = 0; itemIndex < items.length; itemIndex++) {
+        var item = items[itemIndex];
+        if (item != undefined && callback(itemIndex, item)) {
             break;
         }
     }
+    ;
 }
 exports.forEach = forEach;

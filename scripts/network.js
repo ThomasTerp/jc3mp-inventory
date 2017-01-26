@@ -23,10 +23,7 @@ function sendInventory(player, inventory, includeItems, isLocal) {
         if (includeItems) {
             data_1.items = [];
             inventory.items.forEach(function (item, itemIndex) {
-                var itemData = convertItemToData(item);
-                if (itemData != undefined) {
-                    data_1.items.push(itemData);
-                }
+                data_1.items.push(convertItemToData(item));
             });
         }
         jcmp.events.CallRemote("jc3mp-inventory/network/inventoriesAndItemsData", player, JSON.stringify(data_1));
@@ -38,31 +35,28 @@ function sendItems(player, items) {
         items: []
     };
     items.forEach(function (item, itemIndex) {
-        var itemData = convertItemToData(item);
-        if (itemData != undefined) {
-            data.items.push(itemData);
-        }
+        data.items.push(convertItemToData(item));
     });
     jcmp.events.CallRemote("jc3mp-inventory/network/inventoriesAndItemsData", player, JSON.stringify(data));
 }
 exports.sendItems = sendItems;
 function convertItemToData(item) {
+    var itemData = {
+        type: item.constructor.name,
+        rotation: item.rotation,
+        isFlipped: item.isFlipped,
+    };
     if (item.id != undefined) {
-        var itemData = {
-            type: item.constructor.name,
-            id: item.id,
-            rotation: item.rotation,
-            isFlipped: item.isFlipped,
-        };
-        if (item.inventory != undefined) {
-            itemData.inventoryUniqueName = item.inventory.uniqueName;
-            itemData.inventoryPosition = {
-                cols: item.inventoryPosition.cols,
-                rows: item.inventoryPosition.rows
-            };
-        }
-        return itemData;
+        itemData.id = item.id;
     }
+    if (item.inventory != undefined && item.inventory.uniqueName != undefined) {
+        itemData.inventoryUniqueName = item.inventory.uniqueName;
+        itemData.inventoryPosition = {
+            cols: item.inventoryPosition.cols,
+            rows: item.inventoryPosition.rows
+        };
+    }
+    return itemData;
 }
 exports.convertItemToData = convertItemToData;
 function convertInventoryToData(inventory) {
@@ -85,7 +79,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", function
     for (var itemOperationsDataIndex = 0; itemOperationsDataIndex < itemOperationsData.length; itemOperationsDataIndex++) {
         var itemData = itemOperationsData[itemOperationsDataIndex];
         if (itemData.itemOperationType === "move" && itemData.id != undefined) {
-            var item = itemManager.get(itemData.id);
+            var item = itemManager.getByID(itemData.id);
             if (item != undefined) {
                 moveItemsMap.set(item, true);
             }
@@ -119,7 +113,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", function
             var itemData = itemOperationsData[itemOperationsDataIndex];
             switch (itemData.itemOperationType) {
                 case "move":
-                    var item = itemManager.get(itemData.id);
+                    var item = itemManager.getByID(itemData.id);
                     if (item != undefined) {
                         var testInventory_1 = testInventoriesMap.get(itemData.inventoryUniqueName);
                         var itemFactory_1 = itemFactoryManager.get(item.constructor.name, "default");
@@ -176,7 +170,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", function
                     (function () {
                         var destinationInventory = inventoryManager.get(itemData.inventoryUniqueName);
                         var destinationInventoryPosition = new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
-                        var item = itemManager.get(itemData.id);
+                        var item = itemManager.getByID(itemData.id);
                         if (item.inventory != undefined) {
                             item.inventory.removeItem(item);
                         }
@@ -187,25 +181,6 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", function
                     })();
                     break;
                 case "drop":
-                    break;
-                case "create":
-                    (function () {
-                        var inventory = inventoryManager.get(itemData.inventoryUniqueName);
-                        var inventoryPosition = new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
-                        var itemFactory = itemFactoryManager.get(itemData.type, "default");
-                        if (itemFactory != undefined) {
-                            var item = itemFactory.assemble();
-                            item.rotation = itemData.rotation;
-                            item.isFlipped = itemData.isFlipped;
-                            item.updateSlots();
-                            inventory.addItem(item, inventoryPosition);
-                            if (item.inventory === player["inventory"]) {
-                                itemsToSendBack.push(item);
-                            }
-                        }
-                    })();
-                    break;
-                case "dropCreate":
                     break;
             }
         };
@@ -221,6 +196,31 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", function
     }
     else {
         console.log("[jc3mp-inventory] Network error: Failed to validate item operations from player " + player.client.name + " (" + player.client.steamId + ")");
+    }
+});
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemCreate", function (player, itemData) {
+    itemData = JSON.parse(itemData);
+    var inventory = inventoryManager.get(itemData.inventoryUniqueName);
+    var inventoryPosition = new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
+    var itemFactory = itemFactoryManager.get(itemData.type, "default");
+    if (itemFactory != undefined) {
+        var item_1 = itemFactory.assemble();
+        item_1.rotation = itemData.rotation;
+        item_1.isFlipped = itemData.isFlipped;
+        item_1.updateSlots();
+        if (inventory.isItemWithinInventory(item_1, inventoryPosition) && inventory.canItemBePlaced(item_1, inventoryPosition)) {
+            itemManager.add(item_1);
+            inventory.addItem(item_1, inventoryPosition);
+        }
+        else {
+            item_1.destroy();
+            console.log("[jc3mp-inventory] Network error: Inventory position data is invalid for creating item from player " + player.client.name + " (" + player.client.steamId + ")");
+        }
+        database.saveInventory(inventory, true, function () {
+            if (inventory === player["inventory"]) {
+                sendItems(player, [item_1]);
+            }
+        });
     }
 });
 jcmp.events.AddRemoteCallable("jc3mp-inventory/network/uiReady", function (player) {

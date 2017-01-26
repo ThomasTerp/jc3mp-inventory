@@ -178,8 +178,6 @@ export class InventoryWindow extends Window
 		this.html.find(".items").append(item.html);
 		
 		this.setSlotsItem(item);
-		
-		network.addItemOperation(itemManager.getItemIndex(item), "move");
 	}
 	
 	removeItem(item: Item): void

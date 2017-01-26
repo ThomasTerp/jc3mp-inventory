@@ -211,3 +211,22 @@ body {
 .label-repair {
 	color: #fffc82;
 }
+
+
+.context-menu {
+	background-color: rgba(10, 10, 10, 1);
+	padding: 2px;
+}
+
+.context-menu .option {
+	background-color: rgba(40, 40, 40, 1);
+}
+
+.context-menu .option .name {
+	color: rgba(255, 255, 255, 1);
+	
+	width: 100px;
+	
+	padding-top: 4px;
+	padding-bottom: 4px;
+}

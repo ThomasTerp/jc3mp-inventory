@@ -61,6 +61,7 @@ export class ItemDrag
 	item: Item;
 	offset: Vector2;
 	hasMoved: boolean;
+	onDropped: () => void;
 	
 	constructor(item: Item, offset: Vector2)
 	{
@@ -245,6 +246,11 @@ $(document.body).on("mouseup", (event) =>
 			}
 			
 			itemDrag.item.state = "selected";
+		}
+		
+		if(itemDrag.onDropped != undefined)
+		{
+			itemDrag.onDropped();
 		}
 		
 		delete itemDrag.item.itemDrag;

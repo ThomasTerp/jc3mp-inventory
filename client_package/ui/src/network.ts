@@ -1,6 +1,7 @@
 "use strict";
 import {InventoryWindow} from "./classes/windows/inventoryWindow";
 import {Vector2Grid} from "./classes/vector2Grid";
+import {Item} from "./classes/items";
 import * as itemManager from "./managers/itemManager";
 import * as windowManager from "./managers/windowManager";
 import * as itemFactoryManager from "./managers/itemFactoryManager";
@@ -34,71 +35,42 @@ export function sendItemOperations()
 	for(let [itemIndex, itemOperation] of itemOperationsMap.entries())
 	{
 		const item = itemManager.getByItemIndex(itemIndex);
-		console.log(itemIndex)
-		if(item != undefined)
+		
+		if(item != undefined && item.id != undefined)
 		{
 			switch(itemOperation)
 			{
 				//When an item is moved in any way
 				case "move":
-					//If a item does not have an ID, and if the player is an admin (server sided check), a new item will be created
-					if(item.id == undefined)
+					const preItemOperation = preItemOperationsMap.get(itemIndex);
+					
+					if(preItemOperation != undefined)
 					{
-						const itemOperationData = {
-							itemOperationType: "create",
-							type: item.constructor.name,
-							rotation: item.rotation,
-							isFlipped: item.isFlipped
-						} as any;
-						
-						if(item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined)
+						//If the item has actually changed in any way
+						if(
+							item.rotation !== preItemOperation.rotation ||
+							item.isFlipped !== preItemOperation.isFlipped ||
+							item.inventoryWindow !== preItemOperation.inventoryWindow ||
+							item.inventoryPosition !== preItemOperation.inventoryPosition
+						)
 						{
-							itemOperationData.inventoryUniqueName = item.inventoryWindow.uniqueName,
-							itemOperationData.inventoryPosition = {
-								cols: item.inventoryPosition.cols,
-								rows: item.inventoryPosition.rows
+							const itemOperationData = {
+								itemOperationType: "move",
+								id: item.id,
+								rotation: item.rotation,
+								isFlipped: item.isFlipped
+							} as any;
+							
+							if(item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined)
+							{
+								itemOperationData.inventoryUniqueName = item.inventoryWindow.uniqueName,
+								itemOperationData.inventoryPosition = {
+									cols: item.inventoryPosition.cols,
+									rows: item.inventoryPosition.rows
+								}
 							}
 							
-							item.inventoryWindow.removeItem(item);
-						}
-						
-						itemManager.remove(item);
-						item.destroy();
-						
-						itemOperationsData.push(itemOperationData);
-					}
-					else
-					{
-						const preItemOperation = preItemOperationsMap.get(itemIndex);
-						
-						if(preItemOperation != undefined)
-						{
-							//If the item has actually changed in any way
-							if(
-								item.rotation !== preItemOperation.rotation ||
-								item.isFlipped !== preItemOperation.isFlipped ||
-								item.inventoryWindow !== preItemOperation.inventoryWindow ||
-								item.inventoryPosition !== preItemOperation.inventoryPosition
-							)
-							{
-								const itemOperationData = {
-									itemOperationType: "move",
-									id: item.id,
-									rotation: item.rotation,
-									isFlipped: item.isFlipped
-								} as any;
-								
-								if(item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined)
-								{
-									itemOperationData.inventoryUniqueName = item.inventoryWindow.uniqueName,
-									itemOperationData.inventoryPosition = {
-										cols: item.inventoryPosition.cols,
-										rows: item.inventoryPosition.rows
-									}
-								}
-								
-								itemOperationsData.push(itemOperationData);
-							}
+							itemOperationsData.push(itemOperationData);
 						}
 					}
 					
@@ -106,21 +78,10 @@ export function sendItemOperations()
 				
 				//When an item is dropped (dragged outside inventories)
 				case "drop":
-					//If a item does not have an ID, and if the player is an admin (server sided check), an new item will be created and dropped
-					if(item.id == undefined)
-					{
-						itemOperationsData.push({
-							itemOperationType: "dropCreate",
-							type: item.constructor.name,
-						});
-					}
-					else
-					{
-						itemOperationsData.push({
-							itemOperationType: "drop",
-							id: item.id
-						});
-					}
+					itemOperationsData.push({
+						itemOperationType: "drop",
+						id: item.id
+					});
 					
 					break;
 			}
@@ -136,6 +97,31 @@ export function sendItemOperations()
 	}
 	
 	clearItemOperations();
+}
+
+export function sendItemCreate(item: Item)
+{
+	const itemData = {
+		type: item.constructor.name,
+		rotation: item.rotation,
+		isFlipped: item.isFlipped
+	} as any;
+	
+	if(item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined)
+	{
+		itemData.inventoryUniqueName = item.inventoryWindow.uniqueName,
+		itemData.inventoryPosition = {
+			cols: item.inventoryPosition.cols,
+			rows: item.inventoryPosition.rows
+		}
+		
+		item.inventoryWindow.removeItem(item);
+	}
+	
+	itemManager.remove(item);
+	item.destroy();
+	
+	jcmp.CallEvent("jc3mp-inventory/client/sendItemCreate", JSON.stringify(itemData));
 }
 
 
