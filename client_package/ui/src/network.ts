@@ -115,13 +115,34 @@ export function sendItemCreate(item: Item)
 			rows: item.inventoryPosition.rows
 		}
 		
-		item.inventoryWindow.removeItem(item);
+		if(typeof jcmp != "undefined")
+		{
+			item.inventoryWindow.removeItem(item);
+		}
 	}
 	
-	itemManager.remove(item);
-	item.destroy();
-	
-	jcmp.CallEvent("jc3mp-inventory/client/sendItemCreate", JSON.stringify(itemData));
+	if(typeof jcmp != "undefined")
+	{
+		itemManager.remove(item);
+		item.destroy();
+		jcmp.CallEvent("jc3mp-inventory/client/sendItemCreate", JSON.stringify(itemData));
+	}
+}
+
+export function sendItemUse(item: Item): void
+{
+	if(typeof jcmp != "undefined" && item.id != undefined)
+	{
+		jcmp.CallEvent("jc3mp-inventory/client/sendItemUse", item.id);
+	}
+}
+
+export function sendItemDestroy(item: Item): void
+{
+	if(typeof jcmp != "undefined" && item.id != undefined)
+	{
+		jcmp.CallEvent("jc3mp-inventory/client/sendItemDestroy", item.id);
+	}
 }
 
 

@@ -3,8 +3,10 @@ import {InventoryWindow, InventorySlot} from "./../windows/inventoryWindow";
 import {ItemDrag} from "./../itemDrag";
 import {Vector2} from "./../vector2";
 import {Vector2Grid} from "./../vector2Grid";
+import {ContextMenu, ContextMenuOption} from "./../contextMenu";
 import * as itemFactoryManager from "./../../managers/itemFactoryManager";
 import * as windowManager from "./../../managers/windowManager";
+import * as network from "./../../network";
 import * as labels from "./../../labels";
 import * as util from "./../../util";
 
@@ -23,6 +25,8 @@ export abstract class Item
 	inventoryPosition: Vector2Grid;
 	itemDrag: ItemDrag;
 	category: string;
+	useText: string;
+	destroyOnUse: boolean;
 	name: string;
 	description: string;
 	
@@ -79,6 +83,8 @@ export abstract class Item
 		this.state = "none";
 		
 		this.category = "Misc";
+		this.useText = "Use";
+		this.destroyOnUse = true;
 		this.name = "Item " + this.id;
 		this.description = "";
 		this.src = "images/item_base.png";
@@ -99,6 +105,56 @@ export abstract class Item
 	get tooltip(): string
 	{
 		return "<b>" + this.name + "</b><br />" + this.description;
+	}
+	
+	/** The callRemoteUse method will only be called if this returns true */
+	canUse(): boolean
+	{
+		return true
+	}
+	
+	/**
+	 * Tells the server that the local player wants to use this item.
+	 * If the serverside canUse method returns true, the serverside use method will be called, which also calls the clientside use method
+	 */
+	callRemoteUse(): void
+	{
+		network.sendItemUse(this);
+	}
+	
+	/** Called after the serverside canUse and use methods has been called */
+	use(): void
+	{
+		if(this.destroyOnUse)
+		{
+			//TODO: Handle destroy
+		}
+	}
+	
+	/** Tells the server that the local player wants to destroy this item */
+	callRemoteDestroy()
+	{
+		network.sendItemDestroy(this);
+	}
+	
+	/** Create and open a context menu for this item at the specified position */
+	openContextMenu(position: Vector2): ContextMenu
+	{
+		const contextMenu = new ContextMenu(position, [
+			new ContextMenuOption(this.useText, () => {
+				if(this.canUse())
+				{
+					this.callRemoteUse();
+				}
+			}),
+			new ContextMenuOption("Destroy", () => {
+				this.callRemoteDestroy();
+			})
+		]);
+		
+		ContextMenu.open(contextMenu);
+		
+		return contextMenu;
 	}
 	
 	getDefaultSlotsClone(): number[][]

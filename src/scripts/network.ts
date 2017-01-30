@@ -344,6 +344,29 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemCreate", (player: Pla
 	}
 });
 
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemUse", (player: Player, itemID: number) =>
+{
+	const item = itemManager.getByID(itemID);
+	
+	if(item != undefined)
+	{
+		if(item.canUse(player))
+		{
+			item.use(player)
+		}
+	}
+});
+
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemDestroy", (player: Player, itemID: number) =>
+{
+	const item = itemManager.getByID(itemID);
+	
+	if(item != undefined)
+	{
+		//TODO: Handle destroy
+	}
+});
+
 jcmp.events.AddRemoteCallable("jc3mp-inventory/network/uiReady", (player: Player) =>
 {
 	if(player["inventory"] != undefined)

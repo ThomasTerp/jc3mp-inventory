@@ -82,16 +82,29 @@
 	    jcmp.events.CallRemote("jc3mp-inventory/network/itemCreate", JSON.stringify(itemData));
 	}
 	exports.sendItemCreate = sendItemCreate;
+	function sendItemUse(itemID) {
+	    jcmp.events.CallRemote("jc3mp-inventory/network/itemUse", itemID);
+	}
+	exports.sendItemUse = sendItemUse;
+	function sendItemDestroy(itemID) {
+	    jcmp.events.CallRemote("jc3mp-inventory/network/itemDestroy", itemID);
+	}
+	exports.sendItemDestroy = sendItemDestroy;
 	function sendUIReady() {
 	    jcmp.events.CallRemote("jc3mp-inventory/network/uiReady");
 	}
 	exports.sendUIReady = sendUIReady;
 	jcmp.events.AddRemoteCallable("jc3mp-inventory/network/inventoriesAndItemsData", (inventoryAndItemsData) => {
-	    jcmp.print(inventoryAndItemsData);
 	    jcmp.ui.CallEvent("jc3mp-inventory/ui/inventoriesAndItemsData", inventoryAndItemsData);
 	});
 	jcmp.ui.AddEvent("jc3mp-inventory/client/sendItemCreate", (itemData) => {
 	    sendItemCreate(JSON.parse(itemData));
+	});
+	jcmp.ui.AddEvent("jc3mp-inventory/client/sendItemUse", (itemID) => {
+	    sendItemUse(itemID);
+	});
+	jcmp.ui.AddEvent("jc3mp-inventory/client/sendItemDestroy", (itemID) => {
+	    sendItemDestroy(itemID);
 	});
 	jcmp.ui.AddEvent("jc3mp-inventory/client/sendItemOperations", (itemOperationsData) => {
 	    sendItemOperations(JSON.parse(itemOperationsData));

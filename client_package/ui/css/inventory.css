@@ -214,19 +214,27 @@ body {
 
 
 .context-menu {
+	position: absolute;
+	
 	background-color: rgba(10, 10, 10, 1);
-	padding: 2px;
+	z-index: 1000;
 }
 
 .context-menu .option {
-	background-color: rgba(40, 40, 40, 1);
+	background-color: rgba(50, 50, 50, 1);
+	
+	margin: 1px;
+}
+.context-menu .option:hover {
+	background-color: rgba(100, 100, 100, 1);
 }
 
 .context-menu .option .name {
-	color: rgba(255, 255, 255, 1);
+	color: white;
 	
-	width: 100px;
+	min-width: 100px;
 	
-	padding-top: 4px;
-	padding-bottom: 4px;
+	padding: 4px 6px 4px 6px;
+	
+	pointer-events: none;
 }

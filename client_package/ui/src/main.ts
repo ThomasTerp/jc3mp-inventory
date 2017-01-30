@@ -2,7 +2,7 @@
 import "./classes/items";
 import "./classes/itemDrag";
 import "./itemSelection";
-import "./tooltip";
+//import "./tooltip";
 import "./misc";
 
 //Uncomment for browser debugging

@@ -223,6 +223,19 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemCreate", function (pl
         });
     }
 });
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemUse", function (player, itemID) {
+    var item = itemManager.getByID(itemID);
+    if (item != undefined) {
+        if (item.canUse(player)) {
+            item.use(player);
+        }
+    }
+});
+jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemDestroy", function (player, itemID) {
+    var item = itemManager.getByID(itemID);
+    if (item != undefined) {
+    }
+});
 jcmp.events.AddRemoteCallable("jc3mp-inventory/network/uiReady", function (player) {
     if (player["inventory"] != undefined) {
         sendInventory(player, player["inventory"], true, true);

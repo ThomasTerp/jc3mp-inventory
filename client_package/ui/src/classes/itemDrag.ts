@@ -260,9 +260,9 @@ $(document.body).on("mouseup", (event) =>
 //Dragging of items outside inventory
 $(document.body).on("mousedown", ".item", (event) =>
 {
-	let item: Item = $(event.currentTarget).data("item");
+	const item: Item = $(event.currentTarget).data("item");
 	
-	if(item && itemManager.exists(item) && !util.isCtrlPressed())
+	if(item != undefined && itemManager.exists(item) && !util.isCtrlPressed())
 	{
         itemManager.startDragging(item, new Vector2(event.pageX, event.pageY));
 		

@@ -14,6 +14,7 @@ export abstract class VehicleRepairItem extends Item
 		this.repairAmount = 100;
 		
 		this.category = "Vehicles";
+		this.destroyOnUse = true;
 		this.updateDescription();
 	}
 	

@@ -69,14 +69,26 @@ export class InventoryWindow extends Window
 		{
 			if(!util.isCtrlPressed())
 			{
-				let slot: InventorySlot = $(event.currentTarget).data("slot");
+				const slot: InventorySlot = $(event.currentTarget).data("slot");
 				
-				if(slot && slot.item)
+				if(slot != undefined && slot.item != undefined)
 				{
 					itemManager.startDragging(slot.item, new Vector2(event.pageX, event.pageY));
 					
 					event.preventDefault();
 				}
+			}
+		});
+		
+		this.slotsHTML.on("contextmenu", ".slot", (event) =>
+		{
+			const slot: InventorySlot = $(event.currentTarget).data("slot");
+			
+			if(slot != undefined && slot.item != undefined)
+			{
+				slot.item.openContextMenu(new Vector2(event.pageX, event.pageY));
+				
+				event.preventDefault();
 			}
 		});
 		

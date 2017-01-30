@@ -48,7 +48,6 @@
 	__webpack_require__(1);
 	__webpack_require__(9);
 	__webpack_require__(14);
-	__webpack_require__(41);
 	__webpack_require__(42);
 	if (typeof jcmp != "undefined") {
 	    jcmp.CallEvent("jc3mp-inventory/client/uiReady");
@@ -64,10 +63,10 @@
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
 	__export(__webpack_require__(2));
-	__export(__webpack_require__(15));
-	__export(__webpack_require__(28));
-	__export(__webpack_require__(34));
-	__export(__webpack_require__(39));
+	__export(__webpack_require__(16));
+	__export(__webpack_require__(29));
+	__export(__webpack_require__(35));
+	__export(__webpack_require__(40));
 
 
 /***/ },
@@ -78,6 +77,8 @@
 	const inventoryWindow_1 = __webpack_require__(3);
 	const vector2_1 = __webpack_require__(5);
 	const vector2Grid_1 = __webpack_require__(6);
+	const contextMenu_1 = __webpack_require__(15);
+	const network = __webpack_require__(10);
 	const util = __webpack_require__(7);
 	class Item {
 	    set src(value) {
@@ -111,6 +112,8 @@
 	        this.padding = 2;
 	        this.state = "none";
 	        this.category = "Misc";
+	        this.useText = "Use";
+	        this.destroyOnUse = true;
 	        this.name = "Item " + this.id;
 	        this.description = "";
 	        this.src = "images/item_base.png";
@@ -126,6 +129,33 @@
 	    }
 	    get tooltip() {
 	        return "<b>" + this.name + "</b><br />" + this.description;
+	    }
+	    canUse() {
+	        return true;
+	    }
+	    callRemoteUse() {
+	        network.sendItemUse(this);
+	    }
+	    use() {
+	        if (this.destroyOnUse) {
+	        }
+	    }
+	    callRemoteDestroy() {
+	        network.sendItemDestroy(this);
+	    }
+	    openContextMenu(position) {
+	        const contextMenu = new contextMenu_1.ContextMenu(position, [
+	            new contextMenu_1.ContextMenuOption(this.useText, () => {
+	                if (this.canUse()) {
+	                    this.callRemoteUse();
+	                }
+	            }),
+	            new contextMenu_1.ContextMenuOption("Destroy", () => {
+	                this.callRemoteDestroy();
+	            })
+	        ]);
+	        contextMenu_1.ContextMenu.open(contextMenu);
+	        return contextMenu;
 	    }
 	    getDefaultSlotsClone() {
 	        return util.cloneObject(this.defaultSlots);
@@ -290,11 +320,18 @@
 	        }
 	        this.slotsHTML.on("mousedown", ".slot", (event) => {
 	            if (!util.isCtrlPressed()) {
-	                let slot = $(event.currentTarget).data("slot");
-	                if (slot && slot.item) {
+	                const slot = $(event.currentTarget).data("slot");
+	                if (slot != undefined && slot.item != undefined) {
 	                    itemManager.startDragging(slot.item, new vector2_1.Vector2(event.pageX, event.pageY));
 	                    event.preventDefault();
 	                }
+	            }
+	        });
+	        this.slotsHTML.on("contextmenu", ".slot", (event) => {
+	            const slot = $(event.currentTarget).data("slot");
+	            if (slot != undefined && slot.item != undefined) {
+	                slot.item.openContextMenu(new vector2_1.Vector2(event.pageX, event.pageY));
+	                event.preventDefault();
 	            }
 	        });
 	        return this.contentHTML;
@@ -740,6 +777,13 @@
 	    ;
 	}
 	exports.forEach = forEach;
+	$(document.body).on("contextmenu", (event) => {
+	    const item = $(event.target).data("item");
+	    if (item != undefined) {
+	        item.openContextMenu(new vector2_1.Vector2(event.pageX, event.pageY));
+	        event.preventDefault();
+	    }
+	});
 
 
 /***/ },
@@ -904,8 +948,8 @@
 	    });
 	});
 	$(document.body).on("mousedown", ".item", (event) => {
-	    let item = $(event.currentTarget).data("item");
-	    if (item && itemManager.exists(item) && !util.isCtrlPressed()) {
+	    const item = $(event.currentTarget).data("item");
+	    if (item != undefined && itemManager.exists(item) && !util.isCtrlPressed()) {
 	        itemManager.startDragging(item, new vector2_1.Vector2(event.pageX, event.pageY));
 	        event.preventDefault();
 	    }
@@ -1026,13 +1070,29 @@
 	                cols: item.inventoryPosition.cols,
 	                rows: item.inventoryPosition.rows
 	            };
-	        item.inventoryWindow.removeItem(item);
+	        if (typeof jcmp != "undefined") {
+	            item.inventoryWindow.removeItem(item);
+	        }
 	    }
-	    itemManager.remove(item);
-	    item.destroy();
-	    jcmp.CallEvent("jc3mp-inventory/client/sendItemCreate", JSON.stringify(itemData));
+	    if (typeof jcmp != "undefined") {
+	        itemManager.remove(item);
+	        item.destroy();
+	        jcmp.CallEvent("jc3mp-inventory/client/sendItemCreate", JSON.stringify(itemData));
+	    }
 	}
 	exports.sendItemCreate = sendItemCreate;
+	function sendItemUse(item) {
+	    if (typeof jcmp != "undefined" && item.id != undefined) {
+	        jcmp.CallEvent("jc3mp-inventory/client/sendItemUse", item.id);
+	    }
+	}
+	exports.sendItemUse = sendItemUse;
+	function sendItemDestroy(item) {
+	    if (typeof jcmp != "undefined" && item.id != undefined) {
+	        jcmp.CallEvent("jc3mp-inventory/client/sendItemDestroy", item.id);
+	    }
+	}
+	exports.sendItemDestroy = sendItemDestroy;
 	if (typeof jcmp != "undefined") {
 	    jcmp.AddEvent("jc3mp-inventory/ui/inventoriesAndItemsData", (data) => {
 	        data = JSON.parse(data);
@@ -1369,22 +1429,89 @@
 
 /***/ },
 /* 15 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	"use strict";
-	function __export(m) {
-	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+	let currentContextMenu;
+	class ContextMenu {
+	    static open(contextMenu) {
+	        ContextMenu.close();
+	        currentContextMenu = contextMenu;
+	        $(document.body).append(contextMenu.html);
+	    }
+	    static close() {
+	        if (currentContextMenu != undefined) {
+	            currentContextMenu.destroy();
+	            currentContextMenu = undefined;
+	        }
+	    }
+	    set options(value) {
+	        this._options = value;
+	        this.options.forEach((option, optionIndex) => {
+	            this.html.append(option.html);
+	        });
+	    }
+	    get options() {
+	        return this._options;
+	    }
+	    set position(value) {
+	        this._position = value;
+	        this.html.offset({
+	            left: this.position.x,
+	            top: this.position.y
+	        });
+	    }
+	    get position() {
+	        return this._position;
+	    }
+	    constructor(position, options) {
+	        this.createHTML();
+	        this.position = position;
+	        this.options = options;
+	    }
+	    destroy() {
+	        this.html.remove();
+	    }
+	    createHTML() {
+	        this.html = $(`<div class="context-menu"></div>`);
+	        this.html.data("contextMenu", this);
+	    }
+	    addOption(option) {
+	        option.contextMenu = this;
+	        this.html.append(option.html);
+	    }
 	}
-	__export(__webpack_require__(16));
-	__export(__webpack_require__(18));
-	__export(__webpack_require__(20));
-	__export(__webpack_require__(21));
-	__export(__webpack_require__(22));
-	__export(__webpack_require__(23));
-	__export(__webpack_require__(24));
-	__export(__webpack_require__(25));
-	__export(__webpack_require__(26));
-	__export(__webpack_require__(27));
+	exports.ContextMenu = ContextMenu;
+	class ContextMenuOption {
+	    constructor(nameHTML, onClick) {
+	        this.createHTML();
+	        this.nameHTML.html(nameHTML);
+	        this.onClick = onClick;
+	    }
+	    destroy() {
+	        this.html.remove();
+	    }
+	    createHTML() {
+	        this.html = $(`
+				<div class="option">
+					<div class="name"></div>
+				</div>
+			`);
+	        this.html.data("contextMenuOption", this);
+	        this.nameHTML = this.html.find(".name");
+	        this.html.on("mouseup", (event) => {
+	            this.onClick();
+	            ContextMenu.close();
+	        });
+	    }
+	}
+	exports.ContextMenuOption = ContextMenuOption;
+	$(document.body).on("mousedown", (event) => {
+	    const contextMenuOption = $(event.target).data("contextMenuOption");
+	    if (contextMenuOption == undefined) {
+	        ContextMenu.close();
+	    }
+	});
 
 
 /***/ },
@@ -1392,8 +1519,28 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
+	function __export(m) {
+	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+	}
+	__export(__webpack_require__(17));
+	__export(__webpack_require__(19));
+	__export(__webpack_require__(21));
+	__export(__webpack_require__(22));
+	__export(__webpack_require__(23));
+	__export(__webpack_require__(24));
+	__export(__webpack_require__(25));
+	__export(__webpack_require__(26));
+	__export(__webpack_require__(27));
+	__export(__webpack_require__(28));
+
+
+/***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
 	const item_1 = __webpack_require__(2);
-	const labels = __webpack_require__(17);
+	const labels = __webpack_require__(18);
 	class FoodItem extends item_1.Item {
 	    constructor() {
 	        super();
@@ -1401,6 +1548,8 @@
 	        this.hunger = 0;
 	        this.thirst = 0;
 	        this.category = "Food";
+	        this.useText = "Consume";
+	        this.destroyOnUse = true;
 	        this.updateDescription();
 	    }
 	    updateDescription() {
@@ -1421,7 +1570,7 @@
 
 
 /***/ },
-/* 17 */
+/* 18 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1456,12 +1605,12 @@
 
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(16);
-	const itemFactory_1 = __webpack_require__(19);
+	const foodItem_1 = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class AppleItem extends foodItem_1.FoodItem {
 	    constructor() {
@@ -1483,7 +1632,7 @@
 
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1496,12 +1645,12 @@
 
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(16);
-	const itemFactory_1 = __webpack_require__(19);
+	const foodItem_1 = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class RavelloBeansItem extends foodItem_1.FoodItem {
 	    constructor() {
@@ -1523,12 +1672,12 @@
 
 
 /***/ },
-/* 21 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(16);
-	const itemFactory_1 = __webpack_require__(19);
+	const foodItem_1 = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class LaisChipsItem extends foodItem_1.FoodItem {
 	    constructor() {
@@ -1553,12 +1702,12 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(16);
-	const itemFactory_1 = __webpack_require__(19);
+	const foodItem_1 = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class SnikersItem extends foodItem_1.FoodItem {
 	    constructor() {
@@ -1579,12 +1728,12 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(16);
-	const itemFactory_1 = __webpack_require__(19);
+	const foodItem_1 = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class MilkGallonItem extends foodItem_1.FoodItem {
 	    constructor() {
@@ -1608,12 +1757,12 @@
 
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(16);
-	const itemFactory_1 = __webpack_require__(19);
+	const foodItem_1 = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class WaterBottleItem extends foodItem_1.FoodItem {
 	    constructor() {
@@ -1636,12 +1785,12 @@
 
 
 /***/ },
-/* 25 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(16);
-	const itemFactory_1 = __webpack_require__(19);
+	const foodItem_1 = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class FirstAidKitItem extends foodItem_1.FoodItem {
 	    constructor() {
@@ -1663,12 +1812,12 @@
 
 
 /***/ },
-/* 26 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(16);
-	const itemFactory_1 = __webpack_require__(19);
+	const foodItem_1 = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class BandageItem extends foodItem_1.FoodItem {
 	    constructor() {
@@ -1690,12 +1839,12 @@
 
 
 /***/ },
-/* 27 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const foodItem_1 = __webpack_require__(16);
-	const itemFactory_1 = __webpack_require__(19);
+	const foodItem_1 = __webpack_require__(17);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class PillsItem extends foodItem_1.FoodItem {
 	    constructor() {
@@ -1716,27 +1865,27 @@
 
 
 /***/ },
-/* 28 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	function __export(m) {
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
-	__export(__webpack_require__(29));
 	__export(__webpack_require__(30));
 	__export(__webpack_require__(31));
 	__export(__webpack_require__(32));
 	__export(__webpack_require__(33));
+	__export(__webpack_require__(34));
 
 
 /***/ },
-/* 29 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const itemFactory_1 = __webpack_require__(19);
+	const itemFactory_1 = __webpack_require__(20);
 	const inventoryWindow_1 = __webpack_require__(3);
 	const vector2Grid_1 = __webpack_require__(6);
 	const itemFactoryManager = __webpack_require__(12);
@@ -1746,6 +1895,8 @@
 	        super();
 	        this.backpackInventoryWindow = new inventoryWindow_1.InventoryWindow("Backpack", new vector2Grid_1.Vector2Grid(4, 6));
 	        windowManager.add("backpack" + this.id, this.backpackInventoryWindow);
+	        this.useText = "Equip";
+	        this.destroyOnUse = false;
 	        this.name = "Backpack";
 	        this.updateDescription();
 	        this.src = "images/backpack.png";
@@ -1767,16 +1918,18 @@
 
 
 /***/ },
-/* 30 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const itemFactory_1 = __webpack_require__(19);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class BavariumWingsuitItem extends item_1.Item {
 	    constructor() {
 	        super();
+	        this.useText = "Equip";
+	        this.destroyOnUse = false;
 	        this.name = "Bavarium Wingsuit Booster";
 	        this.description = "Requires wingsuit";
 	        this.src = "images/bavarium_wingsuit.png";
@@ -1795,16 +1948,17 @@
 
 
 /***/ },
-/* 31 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const itemFactory_1 = __webpack_require__(19);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class GasCanItem extends item_1.Item {
 	    constructor() {
 	        super();
+	        this.destroyOnUse = true;
 	        this.name = "Gas Can";
 	        this.src = "images/gas_can.png";
 	        this.defaultSlots = [
@@ -1822,16 +1976,18 @@
 
 
 /***/ },
-/* 32 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const itemFactory_1 = __webpack_require__(19);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class GrapplingHookItem extends item_1.Item {
 	    constructor() {
 	        super();
+	        this.useText = "Equip";
+	        this.destroyOnUse = false;
 	        this.name = "Grappling Hook";
 	        this.description = "";
 	        this.src = "images/grappling_hook.png";
@@ -1848,16 +2004,18 @@
 
 
 /***/ },
-/* 33 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const itemFactory_1 = __webpack_require__(19);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class MapItem extends item_1.Item {
 	    constructor() {
 	        super();
+	        this.useText = "Examine";
+	        this.destroyOnUse = false;
 	        this.name = "Map";
 	        this.description = "It has a red marker";
 	        this.src = "images/map.png";
@@ -1874,31 +2032,32 @@
 
 
 /***/ },
-/* 34 */
+/* 35 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	function __export(m) {
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
-	__export(__webpack_require__(35));
 	__export(__webpack_require__(36));
 	__export(__webpack_require__(37));
 	__export(__webpack_require__(38));
+	__export(__webpack_require__(39));
 
 
 /***/ },
-/* 35 */
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const labels = __webpack_require__(17);
+	const labels = __webpack_require__(18);
 	class VehicleRepairItem extends item_1.Item {
 	    constructor() {
 	        super();
 	        this.repairAmount = 100;
 	        this.category = "Vehicles";
+	        this.destroyOnUse = true;
 	        this.updateDescription();
 	    }
 	    updateDescription() {
@@ -1913,12 +2072,12 @@
 
 
 /***/ },
-/* 36 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const vehicleRepairItem_1 = __webpack_require__(35);
-	const itemFactory_1 = __webpack_require__(19);
+	const vehicleRepairItem_1 = __webpack_require__(36);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class SmallWrenchItem extends vehicleRepairItem_1.VehicleRepairItem {
 	    constructor() {
@@ -1939,12 +2098,12 @@
 
 
 /***/ },
-/* 37 */
+/* 38 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const vehicleRepairItem_1 = __webpack_require__(35);
-	const itemFactory_1 = __webpack_require__(19);
+	const vehicleRepairItem_1 = __webpack_require__(36);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class BigWrenchItem extends vehicleRepairItem_1.VehicleRepairItem {
 	    constructor() {
@@ -1965,12 +2124,12 @@
 
 
 /***/ },
-/* 38 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	const vehicleRepairItem_1 = __webpack_require__(35);
-	const itemFactory_1 = __webpack_require__(19);
+	const vehicleRepairItem_1 = __webpack_require__(36);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class ToolboxItem extends vehicleRepairItem_1.VehicleRepairItem {
 	    constructor() {
@@ -1992,28 +2151,30 @@
 
 
 /***/ },
-/* 39 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	function __export(m) {
 	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 	}
-	__export(__webpack_require__(40));
+	__export(__webpack_require__(41));
 
 
 /***/ },
-/* 40 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	const item_1 = __webpack_require__(2);
-	const itemFactory_1 = __webpack_require__(19);
+	const itemFactory_1 = __webpack_require__(20);
 	const itemFactoryManager = __webpack_require__(12);
 	class U39PlechovkaItem extends item_1.Item {
 	    constructor() {
 	        super();
 	        this.category = "Weapons";
+	        this.useText = "Equip";
+	        this.destroyOnUse = false;
 	        this.name = "U-39 Plechovka";
 	        this.src = "images/u39_plechovka.png";
 	        this.defaultSlots = [
@@ -2026,41 +2187,6 @@
 	itemFactoryManager.add(U39PlechovkaItem.name, "default", new itemFactory_1.ItemFactory(() => {
 	    return new U39PlechovkaItem();
 	}));
-
-
-/***/ },
-/* 41 */
-/***/ function(module, exports) {
-
-	"use strict";
-	$(document).tooltip({
-	    track: true,
-	    items: ".slot, .item",
-	    hide: false,
-	    show: false,
-	    content: function () {
-	        let html = $(this);
-	        let item;
-	        if (html.hasClass("slot")) {
-	            let slot = html.data("slot");
-	            if (slot && slot.item) {
-	                item = slot.item;
-	            }
-	        }
-	        else if (html.hasClass("item")) {
-	            item = html.data("item");
-	        }
-	        if (item) {
-	            return item.tooltip;
-	        }
-	    }
-	});
-	$(document).on("mousedown", (event) => {
-	    $(document).tooltip("disable");
-	});
-	$(document).on("mouseup", (event) => {
-	    $(document).tooltip("enable");
-	});
 
 
 /***/ },

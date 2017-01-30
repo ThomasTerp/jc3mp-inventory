@@ -25,6 +25,11 @@ var Item = (function () {
     });
     Item.prototype.destroy = function () {
     };
+    Item.prototype.canUse = function (player) {
+        return true;
+    };
+    Item.prototype.use = function (player) {
+    };
     Item.prototype.getDefaultSlotsClone = function () {
         return util.cloneObject(this.defaultSlots);
     };

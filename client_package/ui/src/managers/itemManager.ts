@@ -2,6 +2,7 @@
 import {Item} from "./../classes/items";
 import {ItemDrag} from "./../classes/itemDrag";
 import {Vector2} from "./../classes/vector2";
+import * as itemManager from "./../managers/itemManager";
 import * as itemSelection from "./../itemSelection";
 import * as network from "./../network";
 import * as util from "./../util";
@@ -109,3 +110,15 @@ export function forEach(callback: (itemIndex: number, item: Item) => any): void
         }
 	};
 }
+
+$(document.body).on("contextmenu", (event) =>
+{
+	const item: Item = $(event.target).data("item");
+	
+	if(item != undefined)
+	{
+		item.openContextMenu(new Vector2(event.pageX, event.pageY));
+		
+		event.preventDefault();
+	}
+});

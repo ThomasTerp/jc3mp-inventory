@@ -45,6 +45,16 @@ export abstract class Item
 		
 	}
 	
+	canUse(player: Player): boolean
+	{
+		return true
+	}
+	
+	use(player: Player): void
+	{
+		
+	}
+	
 	getDefaultSlotsClone(): number[][]
 	{
 		return util.cloneObject(this.defaultSlots);
