@@ -57,6 +57,30 @@ export function sendItems(player: Player, items: Item[]): void
 	jcmp.events.CallRemote("jc3mp-inventory/network/inventoriesAndItemsData", player, JSON.stringify(data));
 }
 
+export function sendItemUse(player: Player, item: Item)
+{
+	if(item.id == undefined)
+	{
+		throw `[jc3mp-inventory] Network error: Item does not have an id`;
+	}
+	else
+	{
+		jcmp.events.CallRemote("jc3mp-inventory/network/itemUse", player, item.id);
+	}
+}
+
+export function sendItemDestroy(player: Player, item: Item)
+{
+	if(item.id == undefined)
+	{
+		throw `[jc3mp-inventory] Network error: Item does not have an id`;
+	}
+	else
+	{
+		jcmp.events.CallRemote("jc3mp-inventory/network/itemDestroy", player, item.id);
+	}
+}
+
 /**
  * Convert an item into data that can be used for sending to client.
  * Returns undefined if item does not have an ID
@@ -217,40 +241,6 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", (player:
 				case "drop":
 					
 					break;
-				
-				case "create":
-					const testInventory = testInventoriesMap.get(itemData.inventoryUniqueName);
-					const itemFactory = itemFactoryManager.get(itemData.type, "default");
-					
-					if(itemFactory != undefined)
-					{
-						const inventoryPosition = new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
-						
-						const testItem = itemFactory.assemble();
-						testItem.rotation = itemData.rotation;
-						testItem.isFlipped = itemData.isFlipped;
-						
-						testItem.updateSlots();
-						
-						if(testInventory.isItemWithinInventory(testItem, inventoryPosition) && testInventory.canItemBePlaced(testItem, inventoryPosition))
-						{
-							testInventory.addItem(testItem, inventoryPosition);
-						}
-						else
-						{
-							success = false;
-						}
-					}
-					else
-					{
-						success = false;
-					}
-					
-					break;
-			
-				case "dropCreate":
-					
-					break;
 			}
 		}
 	}
@@ -266,22 +256,25 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", (player:
 				case "move":
 					(() =>
 					{
-						const destinationInventory = inventoryManager.get(itemData.inventoryUniqueName);
-						const destinationInventoryPosition = new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
-						
 						const item = itemManager.getByID(itemData.id);
 						
-						if(item.inventory != undefined)
+						if(item != undefined)
 						{
-							item.inventory.removeItem(item);
+							const destinationInventory = inventoryManager.get(itemData.inventoryUniqueName);
+							const destinationInventoryPosition = new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
+							
+							if(item.inventory != undefined)
+							{
+								item.inventory.removeItem(item);
+							}
+							
+							item.rotation = itemData.rotation;
+							item.isFlipped = itemData.isFlipped;
+							
+							item.updateSlots();
+							
+							destinationInventory.addItem(item, destinationInventoryPosition);
 						}
-						
-						item.rotation = itemData.rotation;
-						item.isFlipped = itemData.isFlipped;
-						
-						item.updateSlots();
-						
-						destinationInventory.addItem(item, destinationInventoryPosition);
 					})();
 					
 					break;
@@ -353,6 +346,8 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemUse", (player: Player
 		if(item.canUse(player))
 		{
 			item.use(player)
+			
+			sendItemUse(player, item);
 		}
 	}
 });
@@ -363,7 +358,21 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemDestroy", (player: Pl
 	
 	if(item != undefined)
 	{
-		//TODO: Handle destroy
+		if(item.canDestroy(player))
+		{
+			database.deleteItem(item, () =>
+			{
+				if(item.inventory != undefined)
+				{
+					item.inventory.removeItem(item);
+				}
+				
+				itemManager.remove(item);
+				item.destroy();
+				
+				sendItemDestroy(player, item);
+			});
+		}
 	}
 });
 

@@ -10,7 +10,6 @@ export class GasCanItem extends Item
 	{
 		super();
 		
-		this.destroyOnUse = true;
 		this.name = "Gas Can";
 		this.src = "images/gas_can.png";
 		this.defaultSlots = [

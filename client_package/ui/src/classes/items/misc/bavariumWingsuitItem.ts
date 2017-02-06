@@ -11,7 +11,6 @@ export class BavariumWingsuitItem extends Item
 		super();
 		
 		this.useText = "Equip";
-		this.destroyOnUse = false;
 		this.name = "Bavarium Wingsuit Booster";
 		this.description = "Requires wingsuit";
 		this.src = "images/bavarium_wingsuit.png";

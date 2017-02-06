@@ -11,6 +11,7 @@ export class U39PlechovkaItem extends Item
 		super();
 		
 		this.category = "Weapons";
+		this.destroyOnUse = false;
 		this.name = "U-39 Plechovka";
 		this.defaultSlots = [
 			[1, 1, 1, 1, 1, 1],

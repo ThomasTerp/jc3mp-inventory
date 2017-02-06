@@ -26,7 +26,6 @@ export abstract class Item
 	itemDrag: ItemDrag;
 	category: string;
 	useText: string;
-	destroyOnUse: boolean;
 	name: string;
 	description: string;
 	
@@ -84,22 +83,13 @@ export abstract class Item
 		
 		this.category = "Misc";
 		this.useText = "Use";
-		this.destroyOnUse = true;
-		this.name = "Item " + this.id;
+		this.name = "Item";
 		this.description = "";
 		this.src = "images/item_base.png";
 		this.defaultSlots = [
 			[1, 1],
 			[1, 1],
 		];
-	}
-	
-	destroy()
-	{
-		if(this.html != undefined)
-		{
-			this.html.remove();
-		}
 	}
 	
 	get tooltip(): string
@@ -125,9 +115,21 @@ export abstract class Item
 	/** Called after the serverside canUse and use methods has been called */
 	use(): void
 	{
-		if(this.destroyOnUse)
+		
+	}
+	
+	/** The callRemoteDestroy method will only be called if this returns true */
+	canDestroy()
+	{
+		return true;
+	}
+	
+	/** Called after the serverside canDestroy and destroy methods has been called */
+	destroy()
+	{
+		if(this.html != undefined)
 		{
-			//TODO: Handle destroy
+			this.html.remove();
 		}
 	}
 	

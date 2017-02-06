@@ -2,6 +2,8 @@
 import {Inventory, InventorySlot} from "./../inventory";
 import {Vector2Grid} from "./../vector2Grid";
 import * as util from "./../../util";
+import * as itemManager from "./../../managers/itemManager";
+import * as network from "./../../network";
 
 
 //Item base
@@ -14,6 +16,7 @@ export abstract class Item
 	inventory: Inventory;
 	inventoryPosition: Vector2Grid;
 	category: string;
+	destroyOnUse: boolean;
 	name: string;
 	
 	private _defaultSlots: number[][]
@@ -33,24 +36,43 @@ export abstract class Item
 		this.isFlipped = false;
 		
 		this.category = "Misc";
-		this.name = "Item " + (this.id == undefined ? "(NO ID)" : this.id);
+		this.destroyOnUse = true;
+		this.name = "Item";
 		this.defaultSlots = [
 			[1, 1],
 			[1, 1],
 		];
 	}
 	
-	destroy()
-	{
-		
-	}
-	
+	/** The use method will only be called if this returns true */
 	canUse(player: Player): boolean
 	{
 		return true
 	}
 	
 	use(player: Player): void
+	{
+		if(this.destroyOnUse)
+		{
+			if(this.inventory != undefined)
+			{
+				this.inventory.removeItem(this);
+			}
+			
+			itemManager.remove(this);
+			this.destroy();
+			
+			network.sendItemDestroy(player, this);
+		}
+	}
+	
+	/** The destroy method will only be called if this returns true */
+	canDestroy(player: Player): boolean
+	{
+		return true;
+	}
+	
+	destroy(): void
 	{
 		
 	}

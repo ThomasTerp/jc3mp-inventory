@@ -124,7 +124,15 @@ export class ItemCloner
 			item.itemDrag.hasMoved = true;
 			item.itemDrag.onDropped = () =>
 			{
-				network.sendItemCreate(item);
+				if(item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined)
+				{
+					network.sendItemCreate(item);
+					
+					item.inventoryWindow.removeItem(item);
+				}
+				
+				itemManager.remove(item);
+				item.destroy();
 			}
 			
 			event.preventDefault();

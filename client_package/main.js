@@ -97,6 +97,12 @@
 	jcmp.events.AddRemoteCallable("jc3mp-inventory/network/inventoriesAndItemsData", (inventoryAndItemsData) => {
 	    jcmp.ui.CallEvent("jc3mp-inventory/ui/inventoriesAndItemsData", inventoryAndItemsData);
 	});
+	jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemUse", (itemID) => {
+	    jcmp.ui.CallEvent("jc3mp-inventory/ui/itemUse", itemID);
+	});
+	jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemDestroy", (itemID) => {
+	    jcmp.ui.CallEvent("jc3mp-inventory/ui/itemDestroy", itemID);
+	});
 	jcmp.ui.AddEvent("jc3mp-inventory/client/sendItemCreate", (itemData) => {
 	    sendItemCreate(JSON.parse(itemData));
 	});

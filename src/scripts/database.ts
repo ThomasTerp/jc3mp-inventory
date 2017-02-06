@@ -308,7 +308,7 @@ export function saveItem(item: Item, callback?: () => void)
 		{
 			client.incr("item:id", (err, reply) =>
 			{
-				item.id = reply;
+				item.id = parseFloat(reply);
 				
 				resolve();
 			});
@@ -503,6 +503,64 @@ export function loadItemInventory(item: Item, loadInventoryItems: boolean, callb
 			if(callback != undefined)
 			{
 				callback(inventory);
+			}
+		});
+	}
+}
+
+export function deleteItem(item: Item, callback?: () => void): void
+{
+	if(item.id == undefined)
+	{
+		throw `[jc3mp-inventory] Redis database error: Item does not have an id`;
+	}
+	else
+	{
+		Promise.all([
+			new Promise((resolve, reject) =>
+			{
+				client.del(`item:${item.id}`, (err, replies) =>
+				{
+					resolve();
+				});
+				
+			}),
+			new Promise((resolve, reject) =>
+			{
+				client.del(`item:${item.id}:inventoryPosition`, (err, replies) =>
+				{
+					resolve();
+				});
+			}),
+			new Promise((resolve, reject) =>
+			{
+				if(item.inventory != undefined && item.inventory.uniqueName != undefined)
+				{
+					client.srem(`inventory:${item.inventory.uniqueName}:items`, item.id)
+					
+					resolve();
+				}
+				else
+				{
+					resolve();
+				}
+			})
+		]).then(() =>
+		{
+			if(callback != undefined)
+			{
+				callback();
+			}
+		}).catch((err) =>
+		{
+			if(callback != undefined)
+			{
+				callback();
+			}
+			
+			if(err != undefined)
+			{
+				console.log(err)
 			}
 		});
 	}

@@ -114,17 +114,10 @@ export function sendItemCreate(item: Item)
 			cols: item.inventoryPosition.cols,
 			rows: item.inventoryPosition.rows
 		}
-		
-		if(typeof jcmp != "undefined")
-		{
-			item.inventoryWindow.removeItem(item);
-		}
 	}
 	
 	if(typeof jcmp != "undefined")
 	{
-		itemManager.remove(item);
-		item.destroy();
 		jcmp.CallEvent("jc3mp-inventory/client/sendItemCreate", JSON.stringify(itemData));
 	}
 }
@@ -243,6 +236,32 @@ if(typeof jcmp != "undefined")
 					inventoryWindow.updateHTML();
 				}
 			});
+		}
+	});
+	
+	jcmp.AddEvent("jc3mp-inventory/ui/itemUse", (itemID) =>
+	{
+		const item = itemManager.getByID(itemID);
+		
+		if(item != undefined)
+		{
+			item.use();
+		}
+	});
+	
+	jcmp.AddEvent("jc3mp-inventory/ui/itemDestroy", (itemID) =>
+	{
+		const item = itemManager.getByID(itemID);
+		
+		if(item != undefined)
+		{
+			if(item.inventoryWindow != undefined)
+			{
+				item.inventoryWindow.removeItem(item);
+			}
+			
+			itemManager.remove(item);
+			item.destroy();
 		}
 	});
 }

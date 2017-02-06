@@ -113,19 +113,13 @@
 	        this.state = "none";
 	        this.category = "Misc";
 	        this.useText = "Use";
-	        this.destroyOnUse = true;
-	        this.name = "Item " + this.id;
+	        this.name = "Item";
 	        this.description = "";
 	        this.src = "images/item_base.png";
 	        this.defaultSlots = [
 	            [1, 1],
 	            [1, 1],
 	        ];
-	    }
-	    destroy() {
-	        if (this.html != undefined) {
-	            this.html.remove();
-	        }
 	    }
 	    get tooltip() {
 	        return "<b>" + this.name + "</b><br />" + this.description;
@@ -137,7 +131,13 @@
 	        network.sendItemUse(this);
 	    }
 	    use() {
-	        if (this.destroyOnUse) {
+	    }
+	    canDestroy() {
+	        return true;
+	    }
+	    destroy() {
+	        if (this.html != undefined) {
+	            this.html.remove();
 	        }
 	    }
 	    callRemoteDestroy() {
@@ -1070,13 +1070,8 @@
 	                cols: item.inventoryPosition.cols,
 	                rows: item.inventoryPosition.rows
 	            };
-	        if (typeof jcmp != "undefined") {
-	            item.inventoryWindow.removeItem(item);
-	        }
 	    }
 	    if (typeof jcmp != "undefined") {
-	        itemManager.remove(item);
-	        item.destroy();
 	        jcmp.CallEvent("jc3mp-inventory/client/sendItemCreate", JSON.stringify(itemData));
 	    }
 	}
@@ -1150,6 +1145,22 @@
 	                    inventoryWindow.updateHTML();
 	                }
 	            });
+	        }
+	    });
+	    jcmp.AddEvent("jc3mp-inventory/ui/itemUse", (itemID) => {
+	        const item = itemManager.getByID(itemID);
+	        if (item != undefined) {
+	            item.use();
+	        }
+	    });
+	    jcmp.AddEvent("jc3mp-inventory/ui/itemDestroy", (itemID) => {
+	        const item = itemManager.getByID(itemID);
+	        if (item != undefined) {
+	            if (item.inventoryWindow != undefined) {
+	                item.inventoryWindow.removeItem(item);
+	            }
+	            itemManager.remove(item);
+	            item.destroy();
 	        }
 	    });
 	}
@@ -1549,7 +1560,6 @@
 	        this.thirst = 0;
 	        this.category = "Food";
 	        this.useText = "Consume";
-	        this.destroyOnUse = true;
 	        this.updateDescription();
 	    }
 	    updateDescription() {
@@ -1896,7 +1906,6 @@
 	        this.backpackInventoryWindow = new inventoryWindow_1.InventoryWindow("Backpack", new vector2Grid_1.Vector2Grid(4, 6));
 	        windowManager.add("backpack" + this.id, this.backpackInventoryWindow);
 	        this.useText = "Equip";
-	        this.destroyOnUse = false;
 	        this.name = "Backpack";
 	        this.updateDescription();
 	        this.src = "images/backpack.png";
@@ -1929,7 +1938,6 @@
 	    constructor() {
 	        super();
 	        this.useText = "Equip";
-	        this.destroyOnUse = false;
 	        this.name = "Bavarium Wingsuit Booster";
 	        this.description = "Requires wingsuit";
 	        this.src = "images/bavarium_wingsuit.png";
@@ -1958,7 +1966,6 @@
 	class GasCanItem extends item_1.Item {
 	    constructor() {
 	        super();
-	        this.destroyOnUse = true;
 	        this.name = "Gas Can";
 	        this.src = "images/gas_can.png";
 	        this.defaultSlots = [
@@ -1987,7 +1994,6 @@
 	    constructor() {
 	        super();
 	        this.useText = "Equip";
-	        this.destroyOnUse = false;
 	        this.name = "Grappling Hook";
 	        this.description = "";
 	        this.src = "images/grappling_hook.png";
@@ -2015,7 +2021,6 @@
 	    constructor() {
 	        super();
 	        this.useText = "Examine";
-	        this.destroyOnUse = false;
 	        this.name = "Map";
 	        this.description = "It has a red marker";
 	        this.src = "images/map.png";
@@ -2057,7 +2062,6 @@
 	        super();
 	        this.repairAmount = 100;
 	        this.category = "Vehicles";
-	        this.destroyOnUse = true;
 	        this.updateDescription();
 	    }
 	    updateDescription() {
@@ -2174,7 +2178,6 @@
 	        super();
 	        this.category = "Weapons";
 	        this.useText = "Equip";
-	        this.destroyOnUse = false;
 	        this.name = "U-39 Plechovka";
 	        this.src = "images/u39_plechovka.png";
 	        this.defaultSlots = [
@@ -2326,7 +2329,12 @@
 	            itemManager.startDragging(item, new vector2_1.Vector2(event.pageX, event.pageY));
 	            item.itemDrag.hasMoved = true;
 	            item.itemDrag.onDropped = () => {
-	                network.sendItemCreate(item);
+	                if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
+	                    network.sendItemCreate(item);
+	                    item.inventoryWindow.removeItem(item);
+	                }
+	                itemManager.remove(item);
+	                item.destroy();
 	            };
 	            event.preventDefault();
 	        });

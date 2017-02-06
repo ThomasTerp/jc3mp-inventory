@@ -12,6 +12,7 @@ var U39PlechovkaItem = (function (_super) {
     function U39PlechovkaItem() {
         var _this = _super.call(this) || this;
         _this.category = "Weapons";
+        _this.destroyOnUse = false;
         _this.name = "U-39 Plechovka";
         _this.defaultSlots = [
             [1, 1, 1, 1, 1, 1],

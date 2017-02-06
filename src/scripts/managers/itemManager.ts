@@ -34,18 +34,18 @@ export function remove(item: Item): void
     }
 }
 
-/** Get a item by its id */
+/** Get an item by its id */
 export function getByID(id: number): Item
 {
     return itemsMap.get(id)
 }
 
-export function getByItemIndex(itemIndex: number)
+export function getByItemIndex(itemIndex: number): Item
 {
 	return items[itemIndex];
 }
 
-export function getItemIndex(item: Item)
+export function getItemIndex(item: Item): number
 {
 	return items.indexOf(item);
 }

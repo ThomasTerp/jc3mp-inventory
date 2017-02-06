@@ -19,7 +19,6 @@ export abstract class FoodItem extends Item
 		
 		this.category = "Food";
 		this.useText = "Consume";
-		this.destroyOnUse = true;
 		this.updateDescription();
 	}
 	

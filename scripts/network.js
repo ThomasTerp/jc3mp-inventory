@@ -40,6 +40,24 @@ function sendItems(player, items) {
     jcmp.events.CallRemote("jc3mp-inventory/network/inventoriesAndItemsData", player, JSON.stringify(data));
 }
 exports.sendItems = sendItems;
+function sendItemUse(player, item) {
+    if (item.id == undefined) {
+        throw "[jc3mp-inventory] Network error: Item does not have an id";
+    }
+    else {
+        jcmp.events.CallRemote("jc3mp-inventory/network/itemUse", player, item.id);
+    }
+}
+exports.sendItemUse = sendItemUse;
+function sendItemDestroy(player, item) {
+    if (item.id == undefined) {
+        throw "[jc3mp-inventory] Network error: Item does not have an id";
+    }
+    else {
+        jcmp.events.CallRemote("jc3mp-inventory/network/itemDestroy", player, item.id);
+    }
+}
+exports.sendItemDestroy = sendItemDestroy;
 function convertItemToData(item) {
     var itemData = {
         type: item.constructor.name,
@@ -115,16 +133,16 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", function
                 case "move":
                     var item = itemManager.getByID(itemData.id);
                     if (item != undefined) {
-                        var testInventory_1 = testInventoriesMap.get(itemData.inventoryUniqueName);
-                        var itemFactory_1 = itemFactoryManager.get(item.constructor.name, "default");
-                        if (itemFactory_1 != undefined) {
+                        var testInventory = testInventoriesMap.get(itemData.inventoryUniqueName);
+                        var itemFactory = itemFactoryManager.get(item.constructor.name, "default");
+                        if (itemFactory != undefined) {
                             var inventoryPosition = new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
-                            var testItem = itemFactory_1.assemble();
+                            var testItem = itemFactory.assemble();
                             testItem.rotation = itemData.rotation;
                             testItem.isFlipped = itemData.isFlipped;
                             testItem.updateSlots();
-                            if (testInventory_1.isItemWithinInventory(testItem, inventoryPosition) && testInventory_1.canItemBePlaced(testItem, inventoryPosition)) {
-                                testInventory_1.addItem(testItem, inventoryPosition);
+                            if (testInventory.isItemWithinInventory(testItem, inventoryPosition) && testInventory.canItemBePlaced(testItem, inventoryPosition)) {
+                                testInventory.addItem(testItem, inventoryPosition);
                             }
                             else {
                                 success = false;
@@ -137,28 +155,6 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", function
                     break;
                 case "drop":
                     break;
-                case "create":
-                    var testInventory = testInventoriesMap.get(itemData.inventoryUniqueName);
-                    var itemFactory = itemFactoryManager.get(itemData.type, "default");
-                    if (itemFactory != undefined) {
-                        var inventoryPosition = new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
-                        var testItem = itemFactory.assemble();
-                        testItem.rotation = itemData.rotation;
-                        testItem.isFlipped = itemData.isFlipped;
-                        testItem.updateSlots();
-                        if (testInventory.isItemWithinInventory(testItem, inventoryPosition) && testInventory.canItemBePlaced(testItem, inventoryPosition)) {
-                            testInventory.addItem(testItem, inventoryPosition);
-                        }
-                        else {
-                            success = false;
-                        }
-                    }
-                    else {
-                        success = false;
-                    }
-                    break;
-                case "dropCreate":
-                    break;
             }
         }
     }
@@ -168,16 +164,18 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", function
             switch (itemData.itemOperationType) {
                 case "move":
                     (function () {
-                        var destinationInventory = inventoryManager.get(itemData.inventoryUniqueName);
-                        var destinationInventoryPosition = new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
                         var item = itemManager.getByID(itemData.id);
-                        if (item.inventory != undefined) {
-                            item.inventory.removeItem(item);
+                        if (item != undefined) {
+                            var destinationInventory = inventoryManager.get(itemData.inventoryUniqueName);
+                            var destinationInventoryPosition = new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
+                            if (item.inventory != undefined) {
+                                item.inventory.removeItem(item);
+                            }
+                            item.rotation = itemData.rotation;
+                            item.isFlipped = itemData.isFlipped;
+                            item.updateSlots();
+                            destinationInventory.addItem(item, destinationInventoryPosition);
                         }
-                        item.rotation = itemData.rotation;
-                        item.isFlipped = itemData.isFlipped;
-                        item.updateSlots();
-                        destinationInventory.addItem(item, destinationInventoryPosition);
                     })();
                     break;
                 case "drop":
@@ -228,12 +226,23 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemUse", function (playe
     if (item != undefined) {
         if (item.canUse(player)) {
             item.use(player);
+            sendItemUse(player, item);
         }
     }
 });
 jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemDestroy", function (player, itemID) {
     var item = itemManager.getByID(itemID);
     if (item != undefined) {
+        if (item.canDestroy(player)) {
+            database.deleteItem(item, function () {
+                if (item.inventory != undefined) {
+                    item.inventory.removeItem(item);
+                }
+                itemManager.remove(item);
+                item.destroy();
+                sendItemDestroy(player, item);
+            });
+        }
     }
 });
 jcmp.events.AddRemoteCallable("jc3mp-inventory/network/uiReady", function (player) {
