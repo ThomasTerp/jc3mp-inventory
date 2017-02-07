@@ -11,6 +11,7 @@ export class GrapplingHookItem extends Item
 		super();
 		
 		this.useText = "Equip";
+		this.destroyOnUse = false;
 		this.name = "Grappling Hook";
 		this.description = "";
 		this.src = "images/grappling_hook.png";

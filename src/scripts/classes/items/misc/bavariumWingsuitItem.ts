@@ -10,6 +10,7 @@ export class BavariumWingsuitItem extends Item
 	{
 		super();
 		
+		this.destroyOnUse = false;
 		this.name = "Bavarium Wingsuit Booster";
 		this.defaultSlots = [
 			[1, 1, 1],

@@ -4,6 +4,7 @@ import {Vector2Grid} from "./../vector2Grid";
 import * as util from "./../../util";
 import * as itemManager from "./../../managers/itemManager";
 import * as network from "./../../network";
+import * as itemOperations from "./../../itemOperations";
 
 
 //Item base
@@ -52,18 +53,7 @@ export abstract class Item
 	
 	use(player: Player): void
 	{
-		if(this.destroyOnUse)
-		{
-			if(this.inventory != undefined)
-			{
-				this.inventory.removeItem(this);
-			}
-			
-			itemManager.remove(this);
-			this.destroy();
-			
-			network.sendItemDestroy(player, this);
-		}
+		
 	}
 	
 	/** The destroy method will only be called if this returns true */

@@ -11,6 +11,7 @@ var BavariumWingsuitItem = (function (_super) {
     __extends(BavariumWingsuitItem, _super);
     function BavariumWingsuitItem() {
         var _this = _super.call(this) || this;
+        _this.destroyOnUse = false;
         _this.name = "Bavarium Wingsuit Booster";
         _this.defaultSlots = [
             [1, 1, 1],

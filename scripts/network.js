@@ -5,6 +5,7 @@ var inventoryManager = require("./managers/inventoryManager");
 var itemManager = require("./managers/itemManager");
 var itemFactoryManager = require("./managers/itemFactoryManager");
 var database = require("./database");
+var itemOperations = require("./itemOperations");
 function sendInventory(player, inventory, includeItems, isLocal) {
     if (includeItems === void 0) { includeItems = true; }
     if (isLocal === void 0) { isLocal = false; }
@@ -224,25 +225,13 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemCreate", function (pl
 jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemUse", function (player, itemID) {
     var item = itemManager.getByID(itemID);
     if (item != undefined) {
-        if (item.canUse(player)) {
-            item.use(player);
-            sendItemUse(player, item);
-        }
+        itemOperations.playerUseItem(item, player);
     }
 });
 jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemDestroy", function (player, itemID) {
     var item = itemManager.getByID(itemID);
     if (item != undefined) {
-        if (item.canDestroy(player)) {
-            database.deleteItem(item, function () {
-                if (item.inventory != undefined) {
-                    item.inventory.removeItem(item);
-                }
-                itemManager.remove(item);
-                item.destroy();
-                sendItemDestroy(player, item);
-            });
-        }
+        itemOperations.playerDestroyItem(item, player);
     }
 });
 jcmp.events.AddRemoteCallable("jc3mp-inventory/network/uiReady", function (player) {

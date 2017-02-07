@@ -14,6 +14,7 @@ var BackpackItem = (function (_super) {
     function BackpackItem() {
         var _this = _super.call(this) || this;
         _this.backpackInventoryWindow = new inventory_1.Inventory("Backpack", new vector2Grid_1.Vector2Grid(4, 6));
+        _this.destroyOnUse = false;
         _this.name = "Backpack";
         _this.defaultSlots = [
             [1, 1, 1],

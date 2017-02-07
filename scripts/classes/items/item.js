@@ -1,8 +1,6 @@
 "use strict";
 var vector2Grid_1 = require("./../vector2Grid");
 var util = require("./../../util");
-var itemManager = require("./../../managers/itemManager");
-var network = require("./../../network");
 var Item = (function () {
     function Item() {
         this.rotation = 0;
@@ -30,14 +28,6 @@ var Item = (function () {
         return true;
     };
     Item.prototype.use = function (player) {
-        if (this.destroyOnUse) {
-            if (this.inventory != undefined) {
-                this.inventory.removeItem(this);
-            }
-            itemManager.remove(this);
-            this.destroy();
-            network.sendItemDestroy(player, this);
-        }
     };
     Item.prototype.canDestroy = function (player) {
         return true;

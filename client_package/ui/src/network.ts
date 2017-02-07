@@ -246,6 +246,17 @@ if(typeof jcmp != "undefined")
 		if(item != undefined)
 		{
 			item.use();
+			
+			if(item.destroyOnUse)
+			{
+				if(item.inventoryWindow != undefined)
+				{
+					item.inventoryWindow.removeItem(item);
+				}
+				
+				itemManager.remove(item);
+				item.destroy();
+			}
 		}
 	});
 	

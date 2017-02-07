@@ -113,6 +113,7 @@
 	        this.state = "none";
 	        this.category = "Misc";
 	        this.useText = "Use";
+	        this.destroyOnUse = true;
 	        this.name = "Item";
 	        this.description = "";
 	        this.src = "images/item_base.png";
@@ -1151,6 +1152,13 @@
 	        const item = itemManager.getByID(itemID);
 	        if (item != undefined) {
 	            item.use();
+	            if (item.destroyOnUse) {
+	                if (item.inventoryWindow != undefined) {
+	                    item.inventoryWindow.removeItem(item);
+	                }
+	                itemManager.remove(item);
+	                item.destroy();
+	            }
 	        }
 	    });
 	    jcmp.AddEvent("jc3mp-inventory/ui/itemDestroy", (itemID) => {
@@ -1906,6 +1914,7 @@
 	        this.backpackInventoryWindow = new inventoryWindow_1.InventoryWindow("Backpack", new vector2Grid_1.Vector2Grid(4, 6));
 	        windowManager.add("backpack" + this.id, this.backpackInventoryWindow);
 	        this.useText = "Equip";
+	        this.destroyOnUse = false;
 	        this.name = "Backpack";
 	        this.updateDescription();
 	        this.src = "images/backpack.png";
@@ -1938,6 +1947,7 @@
 	    constructor() {
 	        super();
 	        this.useText = "Equip";
+	        this.destroyOnUse = false;
 	        this.name = "Bavarium Wingsuit Booster";
 	        this.description = "Requires wingsuit";
 	        this.src = "images/bavarium_wingsuit.png";
@@ -1966,6 +1976,7 @@
 	class GasCanItem extends item_1.Item {
 	    constructor() {
 	        super();
+	        this.destroyOnUse = false;
 	        this.name = "Gas Can";
 	        this.src = "images/gas_can.png";
 	        this.defaultSlots = [
@@ -1994,6 +2005,7 @@
 	    constructor() {
 	        super();
 	        this.useText = "Equip";
+	        this.destroyOnUse = false;
 	        this.name = "Grappling Hook";
 	        this.description = "";
 	        this.src = "images/grappling_hook.png";
@@ -2021,6 +2033,7 @@
 	    constructor() {
 	        super();
 	        this.useText = "Examine";
+	        this.destroyOnUse = false;
 	        this.name = "Map";
 	        this.description = "It has a red marker";
 	        this.src = "images/map.png";
@@ -2178,6 +2191,7 @@
 	        super();
 	        this.category = "Weapons";
 	        this.useText = "Equip";
+	        this.destroyOnUse = false;
 	        this.name = "U-39 Plechovka";
 	        this.src = "images/u39_plechovka.png";
 	        this.defaultSlots = [

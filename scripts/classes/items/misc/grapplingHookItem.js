@@ -11,6 +11,7 @@ var GrapplingHookItem = (function (_super) {
     __extends(GrapplingHookItem, _super);
     function GrapplingHookItem() {
         var _this = _super.call(this) || this;
+        _this.destroyOnUse = false;
         _this.name = "Grappling Hook";
         _this.defaultSlots = [
             [1, 1, 1, 1],

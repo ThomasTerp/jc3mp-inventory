@@ -11,6 +11,7 @@ var MapItem = (function (_super) {
     __extends(MapItem, _super);
     function MapItem() {
         var _this = _super.call(this) || this;
+        _this.destroyOnUse = false;
         _this.name = "Map";
         _this.defaultSlots = [
             [1, 1],

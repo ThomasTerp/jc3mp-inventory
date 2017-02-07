@@ -10,6 +10,7 @@ export class MapItem extends Item
 	{
 		super();
 		
+		this.destroyOnUse = false;
 		this.name = "Map";
 		this.defaultSlots = [
 			[1, 1],

@@ -26,6 +26,7 @@ export abstract class Item
 	itemDrag: ItemDrag;
 	category: string;
 	useText: string;
+	destroyOnUse: boolean;
 	name: string;
 	description: string;
 	
@@ -83,6 +84,7 @@ export abstract class Item
 		
 		this.category = "Misc";
 		this.useText = "Use";
+		this.destroyOnUse = true;
 		this.name = "Item";
 		this.description = "";
 		this.src = "images/item_base.png";

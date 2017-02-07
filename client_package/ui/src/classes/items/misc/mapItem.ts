@@ -11,6 +11,7 @@ export class MapItem extends Item
 		super();
 		
 		this.useText = "Examine";
+		this.destroyOnUse = false;
 		this.name = "Map";
 		this.description = "It has a red marker";
 		this.src = "images/map.png";

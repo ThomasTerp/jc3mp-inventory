@@ -6,6 +6,7 @@ import * as inventoryManager from "./managers/inventoryManager";
 import * as itemManager from "./managers/itemManager";
 import * as itemFactoryManager from "./managers/itemFactoryManager";
 import * as database from "./database";
+import * as itemOperations from "./itemOperations";
 
 
 export function sendInventory(player: Player, inventory: Inventory, includeItems = true, isLocal = false): void
@@ -343,12 +344,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemUse", (player: Player
 	
 	if(item != undefined)
 	{
-		if(item.canUse(player))
-		{
-			item.use(player)
-			
-			sendItemUse(player, item);
-		}
+		itemOperations.playerUseItem(item, player);
 	}
 });
 
@@ -358,21 +354,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemDestroy", (player: Pl
 	
 	if(item != undefined)
 	{
-		if(item.canDestroy(player))
-		{
-			database.deleteItem(item, () =>
-			{
-				if(item.inventory != undefined)
-				{
-					item.inventory.removeItem(item);
-				}
-				
-				itemManager.remove(item);
-				item.destroy();
-				
-				sendItemDestroy(player, item);
-			});
-		}
+		itemOperations.playerDestroyItem(item, player);
 	}
 });
 

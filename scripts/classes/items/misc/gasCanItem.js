@@ -11,6 +11,7 @@ var GasCanItem = (function (_super) {
     __extends(GasCanItem, _super);
     function GasCanItem() {
         var _this = _super.call(this) || this;
+        _this.destroyOnUse = false;
         _this.name = "Gas Can";
         _this.defaultSlots = [
             [1, 1],

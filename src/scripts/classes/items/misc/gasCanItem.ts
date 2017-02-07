@@ -10,6 +10,7 @@ export class GasCanItem extends Item
 	{
 		super();
 		
+		this.destroyOnUse = false;
 		this.name = "Gas Can";
 		this.defaultSlots = [
 			[1, 1],

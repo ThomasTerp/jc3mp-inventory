@@ -10,6 +10,7 @@ export class GrapplingHookItem extends Item
 	{
 		super();
 		
+		this.destroyOnUse = false;
 		this.name = "Grappling Hook";
 		this.defaultSlots = [
 			[1, 1, 1, 1],

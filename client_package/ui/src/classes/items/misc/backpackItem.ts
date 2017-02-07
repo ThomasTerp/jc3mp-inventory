@@ -19,6 +19,7 @@ export class BackpackItem extends Item
 		windowManager.add("backpack" + this.id, this.backpackInventoryWindow);
 		
 		this.useText = "Equip";
+		this.destroyOnUse = false;
 		this.name = "Backpack";
 		this.updateDescription();
 		this.src = "images/backpack.png";

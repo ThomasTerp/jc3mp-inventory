@@ -18,6 +18,7 @@ export class BackpackItem extends Item
 		//TODO: Figure out how to properly save this
 		this.backpackInventoryWindow = new Inventory("Backpack", new Vector2Grid(4, 6));
 		
+		this.destroyOnUse = false;
 		this.name = "Backpack";
 		this.defaultSlots = [
 			[1, 1, 1],
