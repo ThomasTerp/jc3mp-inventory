@@ -7,23 +7,11 @@ import * as database from "./database";
 import * as network from "./network";
 
 
-export function moveItem(item: Item, toInventory: Inventory, position: Vector2Grid, callback?: (success: boolean) => void): void
+export function moveItem(item: Item, newInventory: Inventory, position: Vector2Grid, rotation: number, isFlipped: boolean, callback?: (success: boolean) => void): void
 {
-	if(toInventory.isItemWithinInventory(item, position) && toInventory.canItemBePlaced(item, position))
+	if(newInventory.isItemWithinInventory(item, position) && newInventory.canItemBePlaced(item, position))
 	{
-		if(item.inventory != undefined)
-		{
-			item.inventory.removeItem(item);
-		}
-		
-		toInventory.addItem(item, position);
-		
-		//TODO: Save move to database
-		
-		if(callback != undefined)
-		{
-			callback(true);
-		}
+		moveItemNoInventoryValidation(item, newInventory, position, rotation, isFlipped, callback)
 	}
 	else
 	{
@@ -31,6 +19,44 @@ export function moveItem(item: Item, toInventory: Inventory, position: Vector2Gr
 		{
 			callback(false);
 		}
+	}
+}
+
+export function moveItemNoInventoryValidation(item: Item, newInventory: Inventory, position: Vector2Grid, rotation: number, isFlipped: boolean, callback?: (success: boolean) => void): void
+{
+	const oldInventory = item.inventory;
+	
+	if(oldInventory != undefined)
+	{
+		oldInventory.removeItem(item);
+	}
+	
+	item.rotation = rotation;
+	item.isFlipped = isFlipped;
+	
+	item.updateSlots();
+	
+	newInventory.addItem(item, position);
+	
+	if(oldInventory == undefined)
+	{
+		database.saveItem(item, () =>
+		{
+			if(callback != undefined)
+			{
+				callback(true);
+			}
+		});
+	}
+	else
+	{
+		database.moveItem(item, oldInventory, () =>
+		{
+			if(callback != undefined)
+			{
+				callback(true);
+			}
+		});
 	}
 }
 
@@ -77,9 +103,10 @@ export function destroyItem(item: Item, callback?: (success: boolean) => void): 
 	});
 }
 
-export function playerMoveItem(item: Item, toInventory, player: Player, callback?: (success: boolean) => void): void
+export function playerMoveItem(item: Item, newInventory, player: Player, position: Vector2Grid, rotation: number, isFlipped: boolean, callback?: (success: boolean) => void): void
 {
-	
+	//TODO: Check for permission to move
+	return moveItem(item, newInventory, position, rotation, isFlipped, callback);
 }
 
 export function playerUseItem(item: Item, player: Player, callback?: (success: boolean) => void): void

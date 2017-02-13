@@ -120,15 +120,6 @@ export function saveInventoryItems(inventory: Inventory, callback?: () => void)
 		
 		Promise.all(itemSavePromises).then(() =>
 		{
-			return new Promise((resolve, reject) =>
-			{
-				client.sadd(`inventory:${inventory.uniqueName}:items`, itemIDs, (err, reply) =>
-				{
-					resolve();
-				});
-			});
-		}).then(() =>
-		{
 			if(callback != undefined)
 			{
 				callback();
@@ -321,7 +312,7 @@ export function saveItem(item: Item, callback?: () => void)
 	{
 		const promises = [];
 		
-		if(item.inventory != undefined && item.inventoryPosition != undefined)
+		if(item.inventory != undefined && item.inventory.uniqueName != undefined && item.inventoryPosition != undefined)
 		{
 			promises.push(
 				new Promise((resolve, reject) =>
@@ -345,6 +336,13 @@ export function saveItem(item: Item, callback?: () => void)
 							resolve();
 						}
 					);
+				}),
+				new Promise((resolve, reject) =>
+				{
+					client.sadd(`inventory:${item.inventory.uniqueName}:items`, item.id, (err, reply) =>
+					{
+						resolve();
+					});
 				})
 			);
 		}
@@ -386,7 +384,7 @@ export function saveItem(item: Item, callback?: () => void)
 		{
 			console.log(err)
 		}
-	});;
+	});
 }
 
 //Get and construct an item from the database
@@ -503,6 +501,70 @@ export function loadItemInventory(item: Item, loadInventoryItems: boolean, callb
 			if(callback != undefined)
 			{
 				callback(inventory);
+			}
+		});
+	}
+}
+
+/** Remove an item from its old inventory and save the item. This should be called after moving the item locally */
+export function moveItem(item: Item, oldInventory: Inventory, callback?: () => void): void
+{
+	if(item.id == undefined)
+	{
+		throw `[jc3mp-inventory] Redis database error: Item does not have an id`;
+	}
+	else if(oldInventory.uniqueName == undefined)
+	{
+		throw `[jc3mp-inventory] Redis database error: oldInventory does not have an uniqueName`;
+	}
+	else if(item.inventory == undefined)
+	{
+		throw `[jc3mp-inventory] Redis database error: Item does not have an inventory`;
+	}
+	else if(item.inventory.uniqueName == undefined)
+	{
+		throw `[jc3mp-inventory] Redis database error: Item inventory does not have an uniqueName`;
+	}
+	else
+	{
+		new Promise((resolve, reject) =>
+		{
+			if(oldInventory !== item.inventory)
+			{
+				client.srem(`inventory:${oldInventory.uniqueName}:items`, item.id, (err, reply) =>
+				{
+					resolve();
+				});
+			}
+			else
+			{
+				resolve();
+			}
+		}).then(() =>
+		{
+			return new Promise((resolve, reject) =>
+			{
+				saveItem(item, () =>
+				{
+					resolve();
+				});
+			});
+		}).then(() =>
+		{
+			if(callback != undefined)
+			{
+				callback();
+			}
+		}).catch((err) =>
+		{
+			if(callback != undefined)
+			{
+				callback();
+			}
+			
+			if(err != undefined)
+			{
+				console.log(err)
 			}
 		});
 	}

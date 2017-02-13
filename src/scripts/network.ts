@@ -248,6 +248,8 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", (player:
 	
 	if(success)
 	{
+		const promises = [];
+		
 		for(let itemOperationsDataIndex = 0; itemOperationsDataIndex < itemOperationsData.length; itemOperationsDataIndex++)
 		{
 			const itemData = itemOperationsData[itemOperationsDataIndex];
@@ -255,28 +257,18 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", (player:
 			switch(itemData.itemOperationType)
 			{
 				case "move":
-					(() =>
+					promises.push(new Promise((resolve, reject) =>
 					{
 						const item = itemManager.getByID(itemData.id);
 						
 						if(item != undefined)
 						{
-							const destinationInventory = inventoryManager.get(itemData.inventoryUniqueName);
-							const destinationInventoryPosition = new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
-							
-							if(item.inventory != undefined)
+							itemOperations.moveItemNoInventoryValidation(item, inventoryManager.get(itemData.inventoryUniqueName), new Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows), itemData.rotation, itemData.isFlipped, (success) =>
 							{
-								item.inventory.removeItem(item);
-							}
-							
-							item.rotation = itemData.rotation;
-							item.isFlipped = itemData.isFlipped;
-							
-							item.updateSlots();
-							
-							destinationInventory.addItem(item, destinationInventoryPosition);
+								resolve();
+							});
 						}
-					})();
+					}));
 					
 					break;
 				
@@ -286,13 +278,9 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", (player:
 			}
 		}
 		
-		testInventoriesMap.forEach((testInventory, uniqueName) =>
+		Promise.all(promises).then(() =>
 		{
-			const inventory = inventoryManager.get(uniqueName);
-			database.saveInventory(inventory, true, () =>
-			{
-				sendItems(player, itemsToSendBack);
-			});
+			//TODO: Do somthing once all item operations has finished
 		});
 	}
 	else

@@ -78,12 +78,6 @@ function saveInventoryItems(inventory, callback) {
             }));
         });
         Promise.all(itemSavePromises_1).then(function () {
-            return new Promise(function (resolve, reject) {
-                exports.client.sadd("inventory:" + inventory.uniqueName + ":items", itemIDs_1, function (err, reply) {
-                    resolve();
-                });
-            });
-        }).then(function () {
             if (callback != undefined) {
                 callback();
             }
@@ -215,13 +209,17 @@ function saveItem(item, callback) {
         }
     }).then(function () {
         var promises = [];
-        if (item.inventory != undefined && item.inventoryPosition != undefined) {
+        if (item.inventory != undefined && item.inventory.uniqueName != undefined && item.inventoryPosition != undefined) {
             promises.push(new Promise(function (resolve, reject) {
                 exports.client.hmset("item:" + item.id, "type", item.constructor.name, "rotation", item.rotation, "isFlipped", item.isFlipped ? 1 : 0, "inventoryUniqueName", item.inventory.uniqueName, function (err, reply) {
                     resolve();
                 });
             }), new Promise(function (resolve, reject) {
                 exports.client.hmset("item:" + item.id + ":inventoryPosition", "cols", item.inventoryPosition.cols, "rows", item.inventoryPosition.rows, function (err, reply) {
+                    resolve();
+                });
+            }), new Promise(function (resolve, reject) {
+                exports.client.sadd("inventory:" + item.inventory.uniqueName + ":items", item.id, function (err, reply) {
                     resolve();
                 });
             }));
@@ -247,7 +245,6 @@ function saveItem(item, callback) {
             console.log(err);
         }
     });
-    ;
 }
 exports.saveItem = saveItem;
 function loadItem(id, callback) {
@@ -333,6 +330,50 @@ function loadItemInventory(item, loadInventoryItems, callback) {
     }
 }
 exports.loadItemInventory = loadItemInventory;
+function moveItem(item, oldInventory, callback) {
+    if (item.id == undefined) {
+        throw "[jc3mp-inventory] Redis database error: Item does not have an id";
+    }
+    else if (oldInventory.uniqueName == undefined) {
+        throw "[jc3mp-inventory] Redis database error: oldInventory does not have an uniqueName";
+    }
+    else if (item.inventory == undefined) {
+        throw "[jc3mp-inventory] Redis database error: Item does not have an inventory";
+    }
+    else if (item.inventory.uniqueName == undefined) {
+        throw "[jc3mp-inventory] Redis database error: Item inventory does not have an uniqueName";
+    }
+    else {
+        new Promise(function (resolve, reject) {
+            if (oldInventory !== item.inventory) {
+                exports.client.srem("inventory:" + oldInventory.uniqueName + ":items", item.id, function (err, reply) {
+                    resolve();
+                });
+            }
+            else {
+                resolve();
+            }
+        }).then(function () {
+            return new Promise(function (resolve, reject) {
+                saveItem(item, function () {
+                    resolve();
+                });
+            });
+        }).then(function () {
+            if (callback != undefined) {
+                callback();
+            }
+        }).catch(function (err) {
+            if (callback != undefined) {
+                callback();
+            }
+            if (err != undefined) {
+                console.log(err);
+            }
+        });
+    }
+}
+exports.moveItem = moveItem;
 function deleteItem(item, callback) {
     if (item.id == undefined) {
         throw "[jc3mp-inventory] Redis database error: Item does not have an id";

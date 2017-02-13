@@ -160,24 +160,19 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", function
         }
     }
     if (success) {
+        var promises = [];
         var _loop_1 = function (itemOperationsDataIndex) {
             var itemData = itemOperationsData[itemOperationsDataIndex];
             switch (itemData.itemOperationType) {
                 case "move":
-                    (function () {
+                    promises.push(new Promise(function (resolve, reject) {
                         var item = itemManager.getByID(itemData.id);
                         if (item != undefined) {
-                            var destinationInventory = inventoryManager.get(itemData.inventoryUniqueName);
-                            var destinationInventoryPosition = new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows);
-                            if (item.inventory != undefined) {
-                                item.inventory.removeItem(item);
-                            }
-                            item.rotation = itemData.rotation;
-                            item.isFlipped = itemData.isFlipped;
-                            item.updateSlots();
-                            destinationInventory.addItem(item, destinationInventoryPosition);
+                            itemOperations.moveItemNoInventoryValidation(item, inventoryManager.get(itemData.inventoryUniqueName), new vector2Grid_1.Vector2Grid(itemData.inventoryPosition.cols, itemData.inventoryPosition.rows), itemData.rotation, itemData.isFlipped, function (success) {
+                                resolve();
+                            });
                         }
-                    })();
+                    }));
                     break;
                 case "drop":
                     break;
@@ -186,11 +181,7 @@ jcmp.events.AddRemoteCallable("jc3mp-inventory/network/itemOperations", function
         for (var itemOperationsDataIndex = 0; itemOperationsDataIndex < itemOperationsData.length; itemOperationsDataIndex++) {
             _loop_1(itemOperationsDataIndex);
         }
-        testInventoriesMap.forEach(function (testInventory, uniqueName) {
-            var inventory = inventoryManager.get(uniqueName);
-            database.saveInventory(inventory, true, function () {
-                sendItems(player, itemsToSendBack);
-            });
+        Promise.all(promises).then(function () {
         });
     }
     else {

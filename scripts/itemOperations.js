@@ -2,15 +2,9 @@
 var itemManager = require("./managers/itemManager");
 var database = require("./database");
 var network = require("./network");
-function moveItem(item, toInventory, position, callback) {
-    if (toInventory.isItemWithinInventory(item, position) && toInventory.canItemBePlaced(item, position)) {
-        if (item.inventory != undefined) {
-            item.inventory.removeItem(item);
-        }
-        toInventory.addItem(item, position);
-        if (callback != undefined) {
-            callback(true);
-        }
+function moveItem(item, newInventory, position, rotation, isFlipped, callback) {
+    if (newInventory.isItemWithinInventory(item, position) && newInventory.canItemBePlaced(item, position)) {
+        moveItemNoInventoryValidation(item, newInventory, position, rotation, isFlipped, callback);
     }
     else {
         if (callback != undefined) {
@@ -19,6 +13,31 @@ function moveItem(item, toInventory, position, callback) {
     }
 }
 exports.moveItem = moveItem;
+function moveItemNoInventoryValidation(item, newInventory, position, rotation, isFlipped, callback) {
+    var oldInventory = item.inventory;
+    if (oldInventory != undefined) {
+        oldInventory.removeItem(item);
+    }
+    item.rotation = rotation;
+    item.isFlipped = isFlipped;
+    item.updateSlots();
+    newInventory.addItem(item, position);
+    if (oldInventory == undefined) {
+        database.saveItem(item, function () {
+            if (callback != undefined) {
+                callback(true);
+            }
+        });
+    }
+    else {
+        database.moveItem(item, oldInventory, function () {
+            if (callback != undefined) {
+                callback(true);
+            }
+        });
+    }
+}
+exports.moveItemNoInventoryValidation = moveItemNoInventoryValidation;
 function destroyItem(item, callback) {
     new Promise(function (resolve, reject) {
         if (item.id == undefined) {
@@ -48,7 +67,8 @@ function destroyItem(item, callback) {
     });
 }
 exports.destroyItem = destroyItem;
-function playerMoveItem(item, toInventory, player, callback) {
+function playerMoveItem(item, newInventory, player, position, rotation, isFlipped, callback) {
+    return moveItem(item, newInventory, position, rotation, isFlipped, callback);
 }
 exports.playerMoveItem = playerMoveItem;
 function playerUseItem(item, player, callback) {
