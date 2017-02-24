@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var Vector2Grid = (function () {
     function Vector2Grid(cols, rows) {
         if (cols === void 0) { cols = 0; }

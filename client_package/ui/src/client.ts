@@ -1,10 +1,9 @@
 "use strict";
 import {InventoryWindow} from "./classes/windows/inventoryWindow";
 import {Vector2Grid} from "./classes/vector2Grid";
-import {Item} from "./classes/items";
+import {Item} from "./classes/item";
 import * as itemManager from "./managers/itemManager";
 import * as windowManager from "./managers/windowManager";
-import * as itemFactoryManager from "./managers/itemFactoryManager";
 import * as localInventoryWindow from "./localInventoryWindow";
 
 
@@ -28,7 +27,7 @@ export function clearItemOperations(): void
 }
 
 /** Send item operations to server and clear operations here */
-export function sendItemOperations()
+export function itemOperations()
 {
 	const itemOperationsData = [];
 	
@@ -92,14 +91,14 @@ export function sendItemOperations()
 	{
 		if(typeof jcmp != "undefined")
 		{
-			jcmp.CallEvent("jc3mp-inventory/client/sendItemOperations", JSON.stringify(itemOperationsData));
+			jcmp.CallEvent("jc3mp-inventory/client/itemOperations", JSON.stringify(itemOperationsData));
 		}
 	}
 	
 	clearItemOperations();
 }
 
-export function sendItemCreate(item: Item)
+export function itemCreate(item: Item)
 {
 	const itemData = {
 		type: item.constructor.name,
@@ -118,28 +117,25 @@ export function sendItemCreate(item: Item)
 	
 	if(typeof jcmp != "undefined")
 	{
-		jcmp.CallEvent("jc3mp-inventory/client/sendItemCreate", JSON.stringify(itemData));
+		jcmp.CallEvent("jc3mp-inventory/client/itemCreate", JSON.stringify(itemData));
 	}
 }
 
-export function sendItemUse(item: Item): void
+export function itemUse(item: Item): void
 {
 	if(typeof jcmp != "undefined" && item.id != undefined)
 	{
-		jcmp.CallEvent("jc3mp-inventory/client/sendItemUse", item.id);
+		jcmp.CallEvent("jc3mp-inventory/client/itemUse", item.id);
 	}
 }
 
-export function sendItemDestroy(item: Item): void
+export function itemDestroy(item: Item): void
 {
 	if(typeof jcmp != "undefined" && item.id != undefined)
 	{
-		jcmp.CallEvent("jc3mp-inventory/client/sendItemDestroy", item.id);
+		jcmp.CallEvent("jc3mp-inventory/client/itemDestroy", item.id);
 	}
 }
-
-
-//Events from server (remote calls)
 
 if(typeof jcmp != "undefined")
 {
@@ -191,21 +187,22 @@ if(typeof jcmp != "undefined")
 				
 				if(item == undefined)
 				{
-					const itemFactory = itemFactoryManager.get(itemData.type, "default");
+					item = new Item();
+					item.type = itemData.type;
+					item.id = itemData.id;
+					item.padding = itemData.padding;
+					item.canUse = itemData.canUse;
+					item.canDestroy = itemData.canDestroy;
+					item.category = itemData.category;
+					item.useText = itemData.useText;
+					item.destroyOnUse = itemData.destroyOnUse;
+					item.name = itemData.name;
+					item.description = itemData.description;
+					item.src = itemData.src;
+					item.tooltip = itemData.tooltip;
+					item.defaultSlots = itemData.defaultSlots;
 					
-					if(itemFactory == undefined)
-					{
-						console.log(`[jc3mp-inventory] Error: Item class (${itemData.type}) does not have a default factory in the item factory manager`);
-						
-						return;
-					}
-					else
-					{
-						item = itemFactory.assemble();
-						item.id = itemData.id;
-						
-						itemManager.add(item);
-					}
+					itemManager.add(item);
 				}
 				
 				item.rotation = itemData.rotation;
@@ -236,43 +233,6 @@ if(typeof jcmp != "undefined")
 					inventoryWindow.updateHTML();
 				}
 			});
-		}
-	});
-	
-	jcmp.AddEvent("jc3mp-inventory/ui/itemUse", (itemID) =>
-	{
-		const item = itemManager.getByID(itemID);
-		
-		if(item != undefined)
-		{
-			item.use();
-			
-			if(item.destroyOnUse)
-			{
-				if(item.inventoryWindow != undefined)
-				{
-					item.inventoryWindow.removeItem(item);
-				}
-				
-				itemManager.remove(item);
-				item.destroy();
-			}
-		}
-	});
-	
-	jcmp.AddEvent("jc3mp-inventory/ui/itemDestroy", (itemID) =>
-	{
-		const item = itemManager.getByID(itemID);
-		
-		if(item != undefined)
-		{
-			if(item.inventoryWindow != undefined)
-			{
-				item.inventoryWindow.removeItem(item);
-			}
-			
-			itemManager.remove(item);
-			item.destroy();
 		}
 	});
 }

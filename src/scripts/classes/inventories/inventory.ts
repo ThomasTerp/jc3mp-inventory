@@ -1,6 +1,6 @@
 "use strict";
-import {Item} from "./items";
-import {Vector2Grid} from "./vector2Grid";
+import {Item} from "./../items";
+import {Vector2Grid} from "./../vector2Grid";
 
 
 /** Class for an inventory with items */
@@ -137,6 +137,11 @@ export class Inventory
 		}
 		
 		return true
+	}
+	
+	hasAccess(player: Player): boolean
+	{
+		return true;
 	}
 }
 

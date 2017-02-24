@@ -1,11 +1,10 @@
 "use strict";
-import {Item} from "./../items/item";
+import {Item} from "./../item";
 import {Window} from "./window";
 import {Vector2} from "./../vector2";
 import {ItemFactory} from "./../itemFactory";
-import * as network from "./../../network";
+import * as client from "./../../client";
 import * as itemManager from "./../../managers/itemManager";
-import * as itemFactoryManager from "./../../managers/itemFactoryManager";
 
 
 export class AdminWindow extends Window
@@ -41,7 +40,9 @@ export class AdminWindow extends Window
 		this.contentHTML.html(`<div class="items"></div>`);
 		this.itemsHTML = this.contentHTML.find(".items");
 		
-		itemFactoryManager.forEach((itemName, itemFactories) =>
+		//TODO: Receive items from client
+		
+		/*itemFactoryManager.forEach((itemName, itemFactories) =>
 		{
 			for (var itemFactory of itemFactories.values())
 			{
@@ -50,7 +51,7 @@ export class AdminWindow extends Window
 				this.itemCloners.push(itemCloner);
 				this.itemsHTML.append(itemCloner.html);
 			}
-		});
+		});*/
 		
 		return this.contentHTML;
     }
@@ -126,7 +127,7 @@ export class ItemCloner
 			{
 				if(item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined)
 				{
-					network.sendItemCreate(item);
+					client.itemCreate(item);
 					
 					item.inventoryWindow.removeItem(item);
 				}

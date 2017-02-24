@@ -1,7 +1,7 @@
 "use strict";
 import redis = require("redis");
 import {Item} from "./classes/items";
-import {Inventory} from "./classes/inventory";
+import {Inventory} from "./classes/inventories/inventory";
 import {Vector2Grid} from "./classes/vector2Grid";
 import * as itemFactoryManager from "./managers/itemFactoryManager";
 import * as inventoryManager from "./managers/inventoryManager";
@@ -26,7 +26,10 @@ export function saveInventory(inventory: Inventory, saveItems: boolean, callback
 		Promise.all([
 			new Promise((resolve, reject) =>
 			{
-				client.hset(`inventory:${inventory.uniqueName}`, "name", inventory.name, (err, reply) =>
+				client.hmset(`inventory:${inventory.uniqueName}`,
+					"type", inventory.constructor.name,
+					"name", inventory.name,
+				(err, reply) =>
 				{
 					if(err != undefined)
 					{
@@ -139,27 +142,28 @@ export function saveInventoryItems(inventory: Inventory, callback?: () => void)
 	}
 }
 
-export function loadInventory(uniqueName: string, loadItems: boolean, callback?: (inventory?: Inventory) => void)
+export function loadInventory(uniqueName: string, loadItems: boolean, assemble: (type, name, size) => Inventory, callback?: (inventory?: Inventory) => void)
 {
 	let inventory: Inventory;
+	let type: string;
 	let name: string;
 	let size: Vector2Grid;
 	
 	Promise.all([
 		new Promise((resolve, reject) =>
 		{
-			client.hget(`inventory:${uniqueName}`, "name", (err, reply) =>
+			client.hvals(`inventory:${uniqueName}`,	(err, replies) =>
 			{
-				
 				if(err != undefined)
 				{
 					reject(err);
 				}
 				else
 				{
-					if(reply != undefined)
+					if(replies.length > 0)
 					{
-						name = reply;
+						type = replies[0];
+						name = replies[1];
 						
 						resolve();
 					}
@@ -195,7 +199,7 @@ export function loadInventory(uniqueName: string, loadItems: boolean, callback?:
 		})
 	]).then(() =>
 	{
-		inventory = new Inventory(name, size);
+		inventory = assemble(type, name, size);
 		inventoryManager.add(uniqueName, inventory);
 		
 		if(loadItems)
@@ -488,7 +492,7 @@ export function loadItem(id: number, callback?: (item?: Item) => void): void
 	});
 }
 
-export function loadItemInventory(item: Item, loadInventoryItems: boolean, callback?: (inventory?: Inventory) => void): void
+export function loadItemInventory(item: Item, loadInventoryItems: boolean, assemble: (type, name, size) => Inventory, callback?: (inventory?: Inventory) => void): void
 {
 	if(item.inventory == undefined || item.inventory.uniqueName == undefined)
 	{
@@ -496,7 +500,7 @@ export function loadItemInventory(item: Item, loadInventoryItems: boolean, callb
 	}
 	else
 	{
-		loadInventory(item.inventory.uniqueName, loadInventoryItems, (inventory) =>
+		loadInventory(item.inventory.uniqueName, loadInventoryItems, assemble, (inventory) =>
 		{
 			if(callback != undefined)
 			{

@@ -1,19 +1,18 @@
 "use strict";
-import {InventoryWindow, InventorySlot} from "./../windows/inventoryWindow";
-import {ItemDrag} from "./../itemDrag";
-import {Vector2} from "./../vector2";
-import {Vector2Grid} from "./../vector2Grid";
-import {ContextMenu, ContextMenuOption} from "./../contextMenu";
-import * as itemFactoryManager from "./../../managers/itemFactoryManager";
-import * as windowManager from "./../../managers/windowManager";
-import * as network from "./../../network";
-import * as labels from "./../../labels";
-import * as util from "./../../util";
+import {InventoryWindow, InventorySlot} from "./windows/inventoryWindow";
+import {ItemDrag} from "./itemDrag";
+import {Vector2} from "./vector2";
+import {Vector2Grid} from "./vector2Grid";
+import {ContextMenu, ContextMenuOption} from "./contextMenu";
+import * as windowManager from "./../managers/windowManager";
+import * as client from "./../client";
+import * as util from "./../util";
 
 
 //Item base
-export abstract class Item
+export class Item
 {
+	type: string;
 	id: number;
 	rotation: number;
 	isFlipped: boolean;
@@ -24,11 +23,14 @@ export abstract class Item
 	inventoryWindow: InventoryWindow;
 	inventoryPosition: Vector2Grid;
 	itemDrag: ItemDrag;
+	canUse: boolean;
+	canDestroy: boolean;
 	category: string;
 	useText: string;
 	destroyOnUse: boolean;
 	name: string;
 	description: string;
+	tooltip: string;
 	
 	_src: string;
 	set src(value)
@@ -76,69 +78,23 @@ export abstract class Item
 	{
 		this.createHTML();
 		
-		this.rotation = 0;
-		this.isFlipped = false;
 		this.isSelected = false;
-		this.padding = 2;
 		this.state = "none";
-		
-		this.category = "Misc";
-		this.useText = "Use";
-		this.destroyOnUse = true;
-		this.name = "Item";
-		this.description = "";
-		this.src = "images/item_base.png";
-		this.defaultSlots = [
-			[1, 1],
-			[1, 1],
-		];
 	}
 	
-	get tooltip(): string
-	{
-		return "<b>" + this.name + "</b><br />" + this.description;
-	}
-	
-	/** The callRemoteUse method will only be called if this returns true */
-	canUse(): boolean
-	{
-		return true
-	}
-	
-	/**
-	 * Tells the server that the local player wants to use this item.
-	 * If the serverside canUse method returns true, the serverside use method will be called, which also calls the clientside use method
-	 */
-	callRemoteUse(): void
-	{
-		network.sendItemUse(this);
-	}
-	
-	/** Called after the serverside canUse and use methods has been called */
-	use(): void
-	{
-		
-	}
-	
-	/** The callRemoteDestroy method will only be called if this returns true */
-	canDestroy()
-	{
-		return true;
-	}
-	
-	/** Called after the serverside canDestroy and destroy methods has been called */
 	destroy()
 	{
 		if(this.html != undefined)
 		{
 			this.html.remove();
 		}
+		
+		client.itemDestroy(this);
 	}
 	
-	/** Tells the server that the local player wants to destroy this item */
-	callRemoteDestroy()
+	use(): void
 	{
-		network.sendItemDestroy(this);
+		client.itemUse(this);
 	}
 	
 	/** Create and open a context menu for this item at the specified position */
@@ -146,13 +102,16 @@ export abstract class Item
 	{
 		const contextMenu = new ContextMenu(position, [
 			new ContextMenuOption(this.useText, () => {
-				if(this.canUse())
+				if(this.canUse)
 				{
-					this.callRemoteUse();
+					this.use();
 				}
 			}),
 			new ContextMenuOption("Destroy", () => {
-				this.callRemoteDestroy();
+				if(this.canDestroy)
+				{
+					this.destroy();
+				}
 			})
 		]);
 		

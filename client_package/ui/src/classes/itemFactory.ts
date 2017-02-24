@@ -1,5 +1,5 @@
 "use strict";
-import {Item} from "./items/item";
+import {Item} from "./item";
 
 
 /** Class to assemble items */

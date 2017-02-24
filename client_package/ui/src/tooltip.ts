@@ -1,5 +1,5 @@
 "use strict";
-import {Item} from "./classes/items";
+import {Item} from "./classes/item";
 import {InventorySlot} from "./classes/windows/inventoryWindow";
 
 

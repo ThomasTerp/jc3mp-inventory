@@ -1,5 +1,6 @@
 "use strict";
-var inventory_1 = require("./classes/inventory");
+Object.defineProperty(exports, "__esModule", { value: true });
+var inventory_1 = require("./classes/inventories/inventory");
 var vector2Grid_1 = require("./classes/vector2Grid");
 var inventoryManager = require("./managers/inventoryManager");
 var itemManager = require("./managers/itemManager");

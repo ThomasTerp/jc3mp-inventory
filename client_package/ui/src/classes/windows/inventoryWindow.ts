@@ -1,12 +1,11 @@
 "use strict";
 import {Window} from "./window";
 import {ItemDrag} from "./../itemDrag";
-import {Item} from "./../items/item";
+import {Item} from "./../item";
 import {Vector2} from "./../vector2";
 import {Vector2Grid} from "./../vector2Grid";
 import * as util from "./../../util";
 import * as itemManager from "./../../managers/itemManager";
-import * as network from "./../../network";
 
 
 /** Class for an inventory with items */

@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var vector2Grid_1 = require("./../vector2Grid");
 var util = require("./../../util");
 var Item = (function () {

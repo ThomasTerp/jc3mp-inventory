@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var itemFactoriesMap = new Map();
 function add(itemName, factoryName, itemFactory) {
     remove(itemName, factoryName);

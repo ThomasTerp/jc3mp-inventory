@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 function mod(number, mod) {
     return ((number % mod) + mod) % mod;
 }

@@ -1,22 +1,22 @@
 "use strict";
 import {Item} from "./../item";
 import {ItemFactory} from "./../../itemFactory";
-import {InventoryWindow} from "./../../windows/inventoryWindow";
+import {Inventory} from "./../../inventories/inventory";
 import {Vector2Grid} from "./../../vector2Grid";
 import * as itemFactoryManager from "./../../../managers/itemFactoryManager";
-import * as windowManager from "./../../../managers/windowManager";
+import * as inventoryManager from "./../../../managers/inventoryManager";
 
 
 export class BackpackItem extends Item
 {
-	backpackInventoryWindow: InventoryWindow;
+	backpackInventory: Inventory;
 	
 	constructor()
 	{
 		super();
 		
-		this.backpackInventoryWindow = new InventoryWindow("Backpack", new Vector2Grid(4, 6));
-		windowManager.add("backpack" + this.id, this.backpackInventoryWindow);
+		this.backpackInventory = new Inventory("Backpack", new Vector2Grid(4, 6));
+		inventoryManager.add("backpack" + this.id, this.backpackInventory);
 		
 		this.useText = "Equip";
 		this.destroyOnUse = false;
@@ -33,7 +33,7 @@ export class BackpackItem extends Item
 	
 	updateDescription()
 	{
-		this.description = `Size: ` + this.backpackInventoryWindow.size.cols + `x` + this.backpackInventoryWindow.size.rows;
+		this.description = `Size: ` + this.backpackInventory.size.cols + `x` + this.backpackInventory.size.rows;
 	}
 }
 

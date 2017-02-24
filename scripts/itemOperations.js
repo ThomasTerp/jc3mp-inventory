@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var itemManager = require("./managers/itemManager");
 var database = require("./database");
 var network = require("./network");

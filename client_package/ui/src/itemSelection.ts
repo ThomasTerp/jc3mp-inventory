@@ -1,5 +1,5 @@
 "use strict";
-import {Item} from "./classes/items";
+import {Item} from "./classes/item";
 import {InventoryWindow, InventorySlot} from "./classes/windows/inventoryWindow";
 import {Vector2} from "./classes/vector2";
 import {Vector2Grid} from "./classes/vector2Grid";

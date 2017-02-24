@@ -1,5 +1,4 @@
 "use strict";
-import * as windowManager from "./../../managers/windowManager";
 
 
 /** Class for a draggable window */

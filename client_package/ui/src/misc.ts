@@ -4,7 +4,7 @@ import {InventoryWindow} from "./classes/windows/inventoryWindow";
 import {Vector2Grid} from "./classes/vector2Grid";
 import * as localInventoryWindow from "./localInventoryWindow";
 import * as windowManager from "./managers/windowManager";
-import * as network from "./network";
+import * as client from "./client";
 
 
 //For browser testing
@@ -44,7 +44,7 @@ if(typeof jcmp != "undefined")
 		//Send inventory and item changes to server when all windows are closed
 		if(!windowManager.isAnyWindowVisible())
 		{
-			network.sendItemOperations();
+			client.itemOperations();
 		}
 	});
 }

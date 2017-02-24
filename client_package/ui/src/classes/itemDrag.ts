@@ -1,10 +1,10 @@
 "use strict";
 import {InventorySlot} from "./windows/inventoryWindow";
-import {Item} from "./items/item";
+import {Item} from "./item";
 import {Vector2} from "./vector2";
 import {Vector2Grid} from "./vector2Grid";
 import * as itemManager from "./../managers/itemManager";
-import * as network from "./../network";
+import * as client from "./../client";
 import * as util from "./../util";
 
 
@@ -168,7 +168,7 @@ export class ItemDrag
 	{
 		if(this.item.id != undefined)
 		{
-			network.addPreItemOperation(itemManager.getItemIndex(this.item), {
+			client.addPreItemOperation(itemManager.getItemIndex(this.item), {
 				rotation: this.item.rotation,
 				isFlipped: this.item.isFlipped,
 				inventoryWindow: this.item.inventoryWindow,
@@ -236,13 +236,13 @@ $(document.body).on("mouseup", (event) =>
 					"pointer-events": "auto",
 				});
 				
-				network.addItemOperation(itemIndex, "drop");
+				client.addItemOperation(itemIndex, "drop");
 			}
 			else
 			{
 				slot.inventoryWindow.addItem(itemDrag.item, slot.position);
 				
-				network.addItemOperation(itemIndex, "move");
+				client.addItemOperation(itemIndex, "move");
 			}
 			
 			itemDrag.item.state = "selected";

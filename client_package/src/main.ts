@@ -2,6 +2,7 @@
 import "./scripts/ui";
 import "./scripts/events";
 import "./scripts/network";
+import "./scripts/classes/items";
 
 
 jcmp.localPlayer.wingsuit.boostEnabled = true;

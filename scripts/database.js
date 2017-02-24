@@ -1,6 +1,6 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var redis = require("redis");
-var inventory_1 = require("./classes/inventory");
 var vector2Grid_1 = require("./classes/vector2Grid");
 var itemFactoryManager = require("./managers/itemFactoryManager");
 var inventoryManager = require("./managers/inventoryManager");
@@ -16,7 +16,7 @@ function saveInventory(inventory, saveItems, callback) {
     else {
         Promise.all([
             new Promise(function (resolve, reject) {
-                exports.client.hset("inventory:" + inventory.uniqueName, "name", inventory.name, function (err, reply) {
+                exports.client.hmset("inventory:" + inventory.uniqueName, "type", inventory.constructor.name, "name", inventory.name, function (err, reply) {
                     if (err != undefined) {
                         reject(err);
                     }
@@ -93,19 +93,21 @@ function saveInventoryItems(inventory, callback) {
     }
 }
 exports.saveInventoryItems = saveInventoryItems;
-function loadInventory(uniqueName, loadItems, callback) {
+function loadInventory(uniqueName, loadItems, assemble, callback) {
     var inventory;
+    var type;
     var name;
     var size;
     Promise.all([
         new Promise(function (resolve, reject) {
-            exports.client.hget("inventory:" + uniqueName, "name", function (err, reply) {
+            exports.client.hvals("inventory:" + uniqueName, function (err, replies) {
                 if (err != undefined) {
                     reject(err);
                 }
                 else {
-                    if (reply != undefined) {
-                        name = reply;
+                    if (replies.length > 0) {
+                        type = replies[0];
+                        name = replies[1];
                         resolve();
                     }
                     else {
@@ -131,7 +133,7 @@ function loadInventory(uniqueName, loadItems, callback) {
             });
         })
     ]).then(function () {
-        inventory = new inventory_1.Inventory(name, size);
+        inventory = assemble(type, name, size);
         inventoryManager.add(uniqueName, inventory);
         if (loadItems) {
             return new Promise(function (resolve, reject) {
@@ -317,12 +319,12 @@ function loadItem(id, callback) {
     });
 }
 exports.loadItem = loadItem;
-function loadItemInventory(item, loadInventoryItems, callback) {
+function loadItemInventory(item, loadInventoryItems, assemble, callback) {
     if (item.inventory == undefined || item.inventory.uniqueName == undefined) {
         throw "[jc3mp-inventory] Redis database error: Item (" + (item.id != undefined ? item.id : "NO ID") + ") does not have an inventory";
     }
     else {
-        loadInventory(item.inventory.uniqueName, loadInventoryItems, function (inventory) {
+        loadInventory(item.inventory.uniqueName, loadInventoryItems, assemble, function (inventory) {
             if (callback != undefined) {
                 callback(inventory);
             }

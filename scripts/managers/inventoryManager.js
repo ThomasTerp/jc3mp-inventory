@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var inventoriesMap = new Map();
 function add(uniqueName, inventory) {
     remove(uniqueName);

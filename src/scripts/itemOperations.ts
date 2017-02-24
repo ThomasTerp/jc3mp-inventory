@@ -1,5 +1,5 @@
 import {Item} from "./classes/items";
-import {Inventory} from "./classes/inventory";
+import {Inventory} from "./classes/inventories/inventory";
 import {Vector2Grid} from "./classes/vector2Grid";
 import * as inventoryManager from "./managers/inventoryManager";
 import * as itemManager from "./managers/itemManager";

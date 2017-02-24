@@ -1,10 +1,9 @@
 "use strict";
-import {Item} from "./../classes/items";
+import {Item} from "./../classes/item";
 import {ItemDrag} from "./../classes/itemDrag";
 import {Vector2} from "./../classes/vector2";
 import * as itemManager from "./../managers/itemManager";
 import * as itemSelection from "./../itemSelection";
-import * as network from "./../network";
 import * as util from "./../util";
 
 

@@ -1,7 +1,7 @@
 "use strict";
 import {Item} from "./../item";
 import {ItemFactory} from "./../../itemFactory";
-import {Inventory} from "./../../inventory";
+import {Inventory} from "./../../inventories/inventory";
 import {Vector2Grid} from "./../../vector2Grid";
 import * as itemFactoryManager from "./../../../managers/itemFactoryManager";
 import * as inventoryManager from "./../../../managers/inventoryManager";
