@@ -11,16 +11,14 @@ if (typeof jcmp != "undefined") {
             return new playerInventory_1.PlayerInventory(name, size, player);
         }, function (inventory) {
             if (inventory == undefined) {
-                var playerInventory = player["inventory"] = new playerInventory_1.PlayerInventory("Inventory", new vector2Grid_1.Vector2Grid(20, 14), player);
-                playerInventory.uniqueName = inventoryUniqueName;
-                playerInventory.addItem(new items.AppleItem(), new vector2Grid_1.Vector2Grid(0, 0));
-                playerInventory.addItem(new items.GasCanItem(), new vector2Grid_1.Vector2Grid(1, 0));
-                playerInventory.addItem(new items.GasCanItem(), new vector2Grid_1.Vector2Grid(4, 0));
-                database.saveInventory(playerInventory, true);
+                inventory = new playerInventory_1.PlayerInventory("Inventory", new vector2Grid_1.Vector2Grid(20, 14), player);
+                inventory.uniqueName = inventoryUniqueName;
+                inventory.addItem(new items.AppleItem(), new vector2Grid_1.Vector2Grid(0, 0));
+                inventory.addItem(new items.GasCanItem(), new vector2Grid_1.Vector2Grid(1, 0));
+                inventory.addItem(new items.GasCanItem(), new vector2Grid_1.Vector2Grid(4, 0));
+                database.saveInventory(inventory, true);
             }
-            else {
-                player["inventory"] = inventory;
-            }
+            player["inventory"] = inventory;
         });
     });
 }

@@ -48,7 +48,7 @@
 	Object.defineProperty(exports, "__esModule", { value: true });
 	__webpack_require__(1);
 	__webpack_require__(9);
-	__webpack_require__(2);
+	__webpack_require__(3);
 	__webpack_require__(10);
 	jcmp.localPlayer.wingsuit.boostEnabled = true;
 	jcmp.localPlayer.wingsuit.boostCooldown = 7;
@@ -62,14 +62,48 @@
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
-	const network = __webpack_require__(2);
+	const vector2Grid_1 = __webpack_require__(2);
+	const network = __webpack_require__(3);
 	const itemManager = __webpack_require__(8);
+	const inventoryManager = __webpack_require__(5);
 	exports.ui = new WebUIWindow("jc3mp-inventory-ui", "package://jc3mp-inventory/ui/index.html", new Vector2(jcmp.viewportSize.x, jcmp.viewportSize.y));
 	exports.ui.autoResize = true;
 	function inventoriesAndItemsData(data) {
 	    jcmp.ui.CallEvent("jc3mp-inventory/ui/inventoriesAndItemsData", JSON.stringify(data));
 	}
 	exports.inventoriesAndItemsData = inventoriesAndItemsData;
+	jcmp.ui.AddEvent("jc3mp-inventory/client/itemOperation", (itemOperationData) => {
+	    itemOperationData = JSON.parse(itemOperationData);
+	    switch (itemOperationData.itemOperationType) {
+	        case "move":
+	            (() => {
+	                const item = itemManager.getByID(itemOperationData.id);
+	                if (item != undefined) {
+	                    const oldInventory = item.inventory;
+	                    const newInventory = inventoryManager.get(itemOperationData.inventoryUniqueName);
+	                    if (oldInventory != undefined) {
+	                        oldInventory.removeItem(item);
+	                    }
+	                    item.rotation = itemOperationData.rotation;
+	                    item.isFlipped = itemOperationData.isFlipped;
+	                    item.updateSlots();
+	                    newInventory.addItem(item, new vector2Grid_1.Vector2Grid(itemOperationData.inventoryPosition.cols, itemOperationData.inventoryPosition.rows));
+	                }
+	            })();
+	            break;
+	        case "drop":
+	            (() => {
+	                const item = itemManager.getByID(itemOperationData.id);
+	                if (item != undefined) {
+	                    const oldInventory = item.inventory;
+	                    if (oldInventory != undefined) {
+	                        oldInventory.removeItem(item);
+	                    }
+	                }
+	            })();
+	            break;
+	    }
+	});
 	jcmp.ui.AddEvent("jc3mp-inventory/client/itemCreate", (itemData) => {
 	    network.itemCreate(JSON.parse(itemData));
 	});
@@ -95,12 +129,27 @@
 
 /***/ },
 /* 2 */
+/***/ function(module, exports) {
+
+	"use strict";
+	Object.defineProperty(exports, "__esModule", { value: true });
+	class Vector2Grid {
+	    constructor(cols = 0, rows = 0) {
+	        this.cols = cols;
+	        this.rows = rows;
+	    }
+	}
+	exports.Vector2Grid = Vector2Grid;
+
+
+/***/ },
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
-	const inventory_1 = __webpack_require__(3);
-	const vector2Grid_1 = __webpack_require__(4);
+	const inventory_1 = __webpack_require__(4);
+	const vector2Grid_1 = __webpack_require__(2);
 	const inventoryManager = __webpack_require__(5);
 	const itemFactoryManager = __webpack_require__(6);
 	const localInventoryWindow = __webpack_require__(7);
@@ -127,6 +176,7 @@
 	}
 	exports.sendUIReady = sendUIReady;
 	jcmp.events.AddRemoteCallable("jc3mp-inventory/network/inventoriesAndItemsData", (inventoryAndItemsData) => {
+	    jcmp.print(inventoryAndItemsData);
 	    inventoryAndItemsData = JSON.parse(inventoryAndItemsData);
 	    if (inventoryAndItemsData.inventories != undefined) {
 	        inventoryAndItemsData.inventories.forEach((inventoryData, inventoryDataIndex) => {
@@ -214,12 +264,12 @@
 
 
 /***/ },
-/* 3 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
-	const vector2Grid_1 = __webpack_require__(4);
+	const vector2Grid_1 = __webpack_require__(2);
 	class Inventory {
 	    constructor(name, size) {
 	        this.name = name;
@@ -311,21 +361,6 @@
 	    }
 	}
 	exports.InventorySlot = InventorySlot;
-
-
-/***/ },
-/* 4 */
-/***/ function(module, exports) {
-
-	"use strict";
-	Object.defineProperty(exports, "__esModule", { value: true });
-	class Vector2Grid {
-	    constructor(cols = 0, rows = 0) {
-	        this.cols = cols;
-	        this.rows = rows;
-	    }
-	}
-	exports.Vector2Grid = Vector2Grid;
 
 
 /***/ },
@@ -518,8 +553,8 @@
 
 	"use strict";
 	Object.defineProperty(exports, "__esModule", { value: true });
-	const vector2Grid_1 = __webpack_require__(4);
-	const network = __webpack_require__(2);
+	const vector2Grid_1 = __webpack_require__(2);
+	const network = __webpack_require__(3);
 	const util = __webpack_require__(12);
 	class Item {
 	    set defaultSlots(value) {
@@ -1055,8 +1090,8 @@
 	Object.defineProperty(exports, "__esModule", { value: true });
 	const item_1 = __webpack_require__(11);
 	const itemFactory_1 = __webpack_require__(17);
-	const inventory_1 = __webpack_require__(3);
-	const vector2Grid_1 = __webpack_require__(4);
+	const inventory_1 = __webpack_require__(4);
+	const vector2Grid_1 = __webpack_require__(2);
 	const itemFactoryManager = __webpack_require__(6);
 	const inventoryManager = __webpack_require__(5);
 	class BackpackItem extends item_1.Item {

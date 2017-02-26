@@ -10,9 +10,58 @@ import * as localInventoryWindow from "./localInventoryWindow";
 const itemOperationsMap: Map<number, string> = new Map();
 const preItemOperationsMap: Map<number, any> = new Map();
 
-export function addItemOperation(itemIndex: number, itemOperation: string): void
+export function convertItemToOperation(item: Item, itemOperationType: string): any
 {
-	itemOperationsMap.set(itemIndex, itemOperation)
+	let itemOperation = {} as any;
+	
+	switch(itemOperationType)
+	{
+		//When an item is moved in any way
+		case "move":
+			itemOperation = {
+				itemOperationType: "move",
+				id: item.id,
+				rotation: item.rotation,
+				isFlipped: item.isFlipped
+			};
+			
+			if(item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined)
+			{
+				itemOperation.inventoryUniqueName = item.inventoryWindow.uniqueName,
+				itemOperation.inventoryPosition = {
+					cols: item.inventoryPosition.cols,
+					rows: item.inventoryPosition.rows
+				}
+			}
+			
+			break;
+			
+		//When an item is dropped (dragged outside inventories)
+		case "drop":
+			itemOperation = {
+				itemOperationType: "drop",
+				id: item.id
+			};
+			
+			break;
+	}
+	
+	return itemOperation;
+}
+
+export function addItemOperation(itemIndex: number, itemOperationType: string): void
+{
+	itemOperationsMap.set(itemIndex, itemOperationType)
+	
+	const item = itemManager.getByItemIndex(itemIndex);
+	
+	if(item != undefined && item.id != undefined)
+	{
+		if(typeof jcmp != "undefined")
+		{
+			jcmp.CallEvent("jc3mp-inventory/client/itemOperation", JSON.stringify(convertItemToOperation(item, itemOperationType)));
+		}
+	}
 }
 
 export function addPreItemOperation(itemIndex: number, preItemOperation: any): void
@@ -31,59 +80,13 @@ export function itemOperations()
 {
 	const itemOperationsData = [];
 	
-	for(let [itemIndex, itemOperation] of itemOperationsMap.entries())
+	for(let [itemIndex, itemOperationType] of itemOperationsMap.entries())
 	{
 		const item = itemManager.getByItemIndex(itemIndex);
 		
 		if(item != undefined && item.id != undefined)
 		{
-			switch(itemOperation)
-			{
-				//When an item is moved in any way
-				case "move":
-					const preItemOperation = preItemOperationsMap.get(itemIndex);
-					
-					if(preItemOperation != undefined)
-					{
-						//If the item has actually changed in any way
-						if(
-							item.rotation !== preItemOperation.rotation ||
-							item.isFlipped !== preItemOperation.isFlipped ||
-							item.inventoryWindow !== preItemOperation.inventoryWindow ||
-							item.inventoryPosition !== preItemOperation.inventoryPosition
-						)
-						{
-							const itemOperationData = {
-								itemOperationType: "move",
-								id: item.id,
-								rotation: item.rotation,
-								isFlipped: item.isFlipped
-							} as any;
-							
-							if(item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined)
-							{
-								itemOperationData.inventoryUniqueName = item.inventoryWindow.uniqueName,
-								itemOperationData.inventoryPosition = {
-									cols: item.inventoryPosition.cols,
-									rows: item.inventoryPosition.rows
-								}
-							}
-							
-							itemOperationsData.push(itemOperationData);
-						}
-					}
-					
-					break;
-				
-				//When an item is dropped (dragged outside inventories)
-				case "drop":
-					itemOperationsData.push({
-						itemOperationType: "drop",
-						id: item.id
-					});
-					
-					break;
-			}
+			itemOperationsData.push(convertItemToOperation(item, itemOperationType));
 		}
 	}
 	

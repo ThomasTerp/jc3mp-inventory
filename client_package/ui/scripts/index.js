@@ -995,8 +995,42 @@
 	const localInventoryWindow = __webpack_require__(13);
 	const itemOperationsMap = new Map();
 	const preItemOperationsMap = new Map();
-	function addItemOperation(itemIndex, itemOperation) {
-	    itemOperationsMap.set(itemIndex, itemOperation);
+	function convertItemToOperation(item, itemOperationType) {
+	    let itemOperation = {};
+	    switch (itemOperationType) {
+	        case "move":
+	            itemOperation = {
+	                itemOperationType: "move",
+	                id: item.id,
+	                rotation: item.rotation,
+	                isFlipped: item.isFlipped
+	            };
+	            if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
+	                itemOperation.inventoryUniqueName = item.inventoryWindow.uniqueName,
+	                    itemOperation.inventoryPosition = {
+	                        cols: item.inventoryPosition.cols,
+	                        rows: item.inventoryPosition.rows
+	                    };
+	            }
+	            break;
+	        case "drop":
+	            itemOperation = {
+	                itemOperationType: "drop",
+	                id: item.id
+	            };
+	            break;
+	    }
+	    return itemOperation;
+	}
+	exports.convertItemToOperation = convertItemToOperation;
+	function addItemOperation(itemIndex, itemOperationType) {
+	    itemOperationsMap.set(itemIndex, itemOperationType);
+	    const item = itemManager.getByItemIndex(itemIndex);
+	    if (item != undefined && item.id != undefined) {
+	        if (typeof jcmp != "undefined") {
+	            jcmp.CallEvent("jc3mp-inventory/client/itemOperation", JSON.stringify(convertItemToOperation(item, itemOperationType)));
+	        }
+	    }
 	}
 	exports.addItemOperation = addItemOperation;
 	function addPreItemOperation(itemIndex, preItemOperation) {
@@ -1010,41 +1044,10 @@
 	exports.clearItemOperations = clearItemOperations;
 	function itemOperations() {
 	    const itemOperationsData = [];
-	    for (let [itemIndex, itemOperation] of itemOperationsMap.entries()) {
+	    for (let [itemIndex, itemOperationType] of itemOperationsMap.entries()) {
 	        const item = itemManager.getByItemIndex(itemIndex);
 	        if (item != undefined && item.id != undefined) {
-	            switch (itemOperation) {
-	                case "move":
-	                    const preItemOperation = preItemOperationsMap.get(itemIndex);
-	                    if (preItemOperation != undefined) {
-	                        if (item.rotation !== preItemOperation.rotation ||
-	                            item.isFlipped !== preItemOperation.isFlipped ||
-	                            item.inventoryWindow !== preItemOperation.inventoryWindow ||
-	                            item.inventoryPosition !== preItemOperation.inventoryPosition) {
-	                            const itemOperationData = {
-	                                itemOperationType: "move",
-	                                id: item.id,
-	                                rotation: item.rotation,
-	                                isFlipped: item.isFlipped
-	                            };
-	                            if (item.inventoryWindow != undefined && item.inventoryWindow.uniqueName != undefined) {
-	                                itemOperationData.inventoryUniqueName = item.inventoryWindow.uniqueName,
-	                                    itemOperationData.inventoryPosition = {
-	                                        cols: item.inventoryPosition.cols,
-	                                        rows: item.inventoryPosition.rows
-	                                    };
-	                            }
-	                            itemOperationsData.push(itemOperationData);
-	                        }
-	                    }
-	                    break;
-	                case "drop":
-	                    itemOperationsData.push({
-	                        itemOperationType: "drop",
-	                        id: item.id
-	                    });
-	                    break;
-	            }
+	            itemOperationsData.push(convertItemToOperation(item, itemOperationType));
 	        }
 	    }
 	    if (itemOperationsData.length > 0) {

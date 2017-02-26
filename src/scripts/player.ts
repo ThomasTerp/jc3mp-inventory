@@ -22,19 +22,17 @@ if(typeof jcmp != "undefined")
 				{
 					//Create new inventory for player and give starting items
 					
-					const playerInventory = player["inventory"] = new PlayerInventory("Inventory", new Vector2Grid(20, 14), player);
-					playerInventory.uniqueName = inventoryUniqueName;
+					inventory = new PlayerInventory("Inventory", new Vector2Grid(20, 14), player);
+					inventory.uniqueName = inventoryUniqueName;
 					
-					playerInventory.addItem(new items.AppleItem(), new Vector2Grid(0, 0));
-					playerInventory.addItem(new items.GasCanItem(), new Vector2Grid(1, 0));
-					playerInventory.addItem(new items.GasCanItem(), new Vector2Grid(4, 0));
+					inventory.addItem(new items.AppleItem(), new Vector2Grid(0, 0));
+					inventory.addItem(new items.GasCanItem(), new Vector2Grid(1, 0));
+					inventory.addItem(new items.GasCanItem(), new Vector2Grid(4, 0));
 					
-					database.saveInventory(playerInventory, true);
+					database.saveInventory(inventory, true);
 				}
-				else
-				{
-					player["inventory"] = inventory;
-				}
+				
+				player["inventory"] = inventory;
 			}
 		);
 	});
