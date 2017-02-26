@@ -176,7 +176,6 @@
 	}
 	exports.sendUIReady = sendUIReady;
 	jcmp.events.AddRemoteCallable("jc3mp-inventory/network/inventoriesAndItemsData", (inventoryAndItemsData) => {
-	    jcmp.print(inventoryAndItemsData);
 	    inventoryAndItemsData = JSON.parse(inventoryAndItemsData);
 	    if (inventoryAndItemsData.inventories != undefined) {
 	        inventoryAndItemsData.inventories.forEach((inventoryData, inventoryDataIndex) => {

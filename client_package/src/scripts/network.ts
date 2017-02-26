@@ -36,7 +36,6 @@ export function sendUIReady()
 
 jcmp.events.AddRemoteCallable("jc3mp-inventory/network/inventoriesAndItemsData", (inventoryAndItemsData: any) =>
 {
-	jcmp.print(inventoryAndItemsData)
 	inventoryAndItemsData = JSON.parse(inventoryAndItemsData);
 	
 	
